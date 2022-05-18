@@ -1,14 +1,17 @@
-#Take the user input for weight in lbs, Height in feet
-#Print weight in Kgs, print height in meters
-#Calculate Body mass Index = Weight(Kg) / (height (m))^2
-#Print BMI  (5 pts)
-#Output should look like  (5 pts)
-#Weight = ____ lbs =  ____ Kg, 
-#Height = ____ feet = ____ m, 
-#BMI = ____
-
 import math
 import sys
+
+def calBMI():
+    """
+    Take the user input for weight in lbs, Height in feet
+    Print weight in Kgs, print height in meters
+    Calculate Body mass Index = Weight(Kg) / (height (m))^2
+    Print BMI  (5 pts)
+    Output should look like  (5 pts)
+    Weight = ____ lbs =  ____ Kg, 
+    Height = ____ feet = ____ m, 
+    BMI = ____"""
+    pass
 
 def getUserInput():
     #Variables
