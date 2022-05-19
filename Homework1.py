@@ -50,10 +50,3 @@ def calSalary(h:float, r = 20):
     else:
         salary = h * r
     return salary
-
-#pyramidInput = input("Enter string for message pyramid: ")
-#pyramid(pyramidInput)
-
-#findSquaresInput1 = int(input("Enter first number: "))
-#findSquaresInput2 = int(input("Enter second numeber: "))
-#findSquares(findSquaresInput1, findSquaresInput2)
