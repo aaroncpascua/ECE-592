@@ -44,7 +44,4 @@ def calcBMI(userWeight, userHeight):
         print('Height = {0} feet = {1} m,'.format(format(heightFloat,".3f"), format(ft2m,".3f"))) 
         print('BMI = {0}'.format(format(BMI,".3f")))
         
-
-userWeight = input("Enter your weight in pounds (lbs): ")
-userHeight = input("Enter your height in feet (ft): ")
-calcBMI(userWeight, userHeight)
+getUserInput()
