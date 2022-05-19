@@ -1,17 +1,17 @@
 import math
 
 def pyramid(s):
-    '''Takes a user input and creates a pyramid pattern of the letters
-    in the string'''
+    """Takes a user input and creates a pyramid pattern of the letters
+    in the string"""
     
     strList = []
     for i in range(1,len(s)+1):
         strList.append(s[:i])
     print("\n".join(strList))
     
-def findSquares(s:int, e:int):
-    '''Find and print a list of numbers which are exact squares of an 
-    integer between two user inputted integer values'''
+def findSquares(s = 0, e = 0):
+    """Find and print a list of numbers which are exact squares of an 
+    integer between two user inputted integer values"""
     
     #Find the lowest number of the two integers
     if s < e:
@@ -36,9 +36,9 @@ def findSquares(s:int, e:int):
             perfRoots.append(x)
     print(perfRoots)
     
-def calSalary(h:float, r:float):
-    '''Calculate salary given number of hours and hourly rate. Calculates
-    overtime rate if hours are greater than 40.'''
+def calSalary(h:float, r = 20):
+    """Calculate salary given number of hours and hourly rate. Calculates
+    overtime rate if hours are greater than 40."""
     
     if h < 0:
         print("Not valid hours")
@@ -50,7 +50,7 @@ def calSalary(h:float, r:float):
     else:
         salary = h * r
     return salary
-    
+
 #pyramidInput = input("Enter string for message pyramid: ")
 #pyramid(pyramidInput)
 
