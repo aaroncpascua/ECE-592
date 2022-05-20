@@ -23,7 +23,7 @@ def calcBMI(userWeight, userHeight):
     #Check to see if input is numerical
     if not str(userWeight).isnumeric() or not str(userHeight).isnumeric():
         print("Invalid entry")
-        sys.exit(-1)
+        return -1
     if int(userWeight) == 0 or int(userHeight) == 0:
         print ("Invalid weight or height")
         getUserInput()
