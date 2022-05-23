@@ -1,6 +1,7 @@
 import datetime
 import string
 import random
+import os.path
 
 def gen_code_file(secretword:str, freq:int, maxlength:int):
     """Take user inputted secret word, frequency the secret word is shown,
@@ -31,28 +32,39 @@ def gen_code_file(secretword:str, freq:int, maxlength:int):
     #Write back to file
     listUsedNum = []
     randNum = random.randint(0, maxlength - len(secretword) - 10)
+    secretDateStr = datetime.date.today().strftime("%m-%d-%Y")
+    secretList1 = list(secretword + "{0}".format(secretDateStr))
+    secretList2 = list(secretword)
     j = 0
     i = 0
     while i < freq:
         file = open(filePath, 'r')
         fileStr = file.read()
         tempStrList = list(fileStr)
-        secretDateStr = datetime.date.today().strftime("%m-%d-%y")
-        secretList1 = list(secretword + "{0}".format(secretDateStr))
-        secretList2 = list(secretword)
 
+
+        #First occurence will have secretword + date
+        #else, print secretword
         if i == 0:
             while j < len(secretList1):
                 tempStrList[randNum + j] = secretList1[j] 
-                listUsedNum.append(randNum + j)                
+                listUsedNum.append(randNum + j)
                 j += 1
         else:
             while j < len(secretList2):
                 tempStrList[randNum + j] = secretList2[j]
                 listUsedNum.append(randNum + j)
                 j += 1
+               
+        #Account for space in front of secret word
+        j = 0
+        while j < len(secretList1):
+                if (randNum + j - len(secretList1) - 1) >= -1:
+                    listUsedNum.append(randNum + j - len(secretList1))
+                j += 1
                 
         j = 0
+        #Make sure secretword doesn't overlap each other
         randNum = random.choice([k for k in range(0, maxlength - len(secretword) - 10) if k not in listUsedNum])
         fileStr = "".join(tempStrList)
         file.close()
@@ -61,3 +73,39 @@ def gen_code_file(secretword:str, freq:int, maxlength:int):
         file.write(fileStr)
         file.close()
         i += 1
+        
+    return (filePath, secretword)
+        
+def findWord(filename:str, word:str):
+    """Opens a text file and finds the first index of a given word. Store every
+    the index of every instance of the word in a list and returns that list.
+    Checks if the file exists or not. Returns -1 if file doesn't exist"""
+    
+    if os.path.isfile(filename):
+        file = open(filename, 'r')
+        fileStrList = list(file.read())
+        
+        i = 0
+        indexList = []
+        wordList = []
+        counter = 0
+        for x in word:
+            wordList[counter] = wordList.append(None)
+            counter += 1
+        while i < len(fileStrList):
+            j = 0
+            while j < len(wordList) - 1:
+                wordList[j] = wordList[j + 1]
+                j += 1
+            wordList[len(word) - 1] = fileStrList[i]
+            compStr = ''.join(map(str,wordList))
+            if compStr == word:
+                indexList.append(i - (len(word)-2))
+            i += 1
+        print(indexList)
+    else:
+        print("File doesn't exist >:(")
+        return -1
+    
+filePath, word = gen_code_file('lauren', 3, 100)
+findWord(filePath, word)
