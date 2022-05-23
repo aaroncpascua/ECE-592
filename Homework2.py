@@ -2,6 +2,7 @@ import datetime
 import string
 import random
 import os.path
+import csv
 
 def gen_code_file(secretword:str, freq:int, maxlength:int):
     """Take user inputted secret word, frequency the secret word is shown,
@@ -11,7 +12,7 @@ def gen_code_file(secretword:str, freq:int, maxlength:int):
     #Generate file path
     dateStr = datetime.date.today().strftime("%m%d%y")
     timeStr = datetime.datetime.now().time().strftime("%H%M")
-    filePath = 'E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/random_letters_{0}_{1}.txt'.format(dateStr, timeStr)
+    filePath = 'E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/random_letters_new_{0}_{1}.txt'.format(dateStr, timeStr)
     
     #Open file and write maxlength of random ascii letters
     with open(filePath, 'w') as file:
@@ -107,5 +108,21 @@ def findWord(filename:str, word:str):
         print("File doesn't exist >:(")
         return -1
     
-filePath, word = gen_code_file('lauren', 3, 100)
-findWord(filePath, word)
+def dataSorter(filename:str):
+    dict = {}
+    with open(filename, 'r') as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=',')
+        fields = next(csvreader)
+        for row in csvreader:
+            print(row)
+            category = row[0]
+            print(category)
+            value = row[1]
+            print(value)
+            if not category in dict:
+                dict.update({category: []})
+                dict[category].append(value)
+            else:
+                dict[category].append(value)
+    #print(dict["name"])
+dataSorter('E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/answer.csv')
