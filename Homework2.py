@@ -110,19 +110,26 @@ def findWord(filename:str, word:str):
     
 def dataSorter(filename:str):
     dict = {}
+    
+    #Open csv, create keys, and append to keys
     with open(filename, 'r') as csvfile:
         csvreader = csv.reader(csvfile, delimiter=',')
-        fields = next(csvreader)
+        next(csvreader)
+        headers = []
         for row in csvreader:
-            print(row)
             category = row[0]
-            print(category)
             value = row[1]
-            print(value)
             if not category in dict:
                 dict.update({category: []})
                 dict[category].append(value)
+                headers.append(category)
             else:
                 dict[category].append(value)
-    #print(dict["name"])
+    #Create csv file and write keys as headers and their respective values
+    with open('sorteddata.csv', 'w') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+        writer.writerow()
+        
+                
+    
 dataSorter('E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/answer.csv')
