@@ -9,27 +9,27 @@ def pyramid(s):
         strList.append(s[:i])
     print("\n".join(strList))
     
-def findSquares(s = 0, e = 0):
+def findSquares(s = 0.0, e = 0.0):
     """Find and print a list of numbers which are exact squares of an 
     integer between two user inputted integer values."""
     
     #Find the lowest number of the two integers
     if s < e:
-        lowNum = s
-        highNum = e
+        lowNum = int(s)
+        highNum = int(e)
     elif s == 0:
         lowNum = 0
-        highNum = e
+        highNum = int(e)
     elif e == 0:
         lowNum = 0
-        highNum = s
+        highNum = int(s)
     else:
-        lowNum = e
-        highNum = s
+        lowNum = int(e)
+        highNum = int(s)
     
     #Loop through the numbers, find perfect squares, and store into list
     perfRoots = []
-    for x in range(lowNum, highNum):
+    for x in range(lowNum, highNum + 1):
         root = math.sqrt(x)
         if int(root + 0.5) ** 2 == x:
             #print(x)
