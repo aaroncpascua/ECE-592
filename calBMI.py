@@ -1,6 +1,6 @@
 import math
 
-def calBMI():
+def calBMI(userWeight, userHeight):
     """
     Take the user input for weight in lbs, Height in feet
     Print weight in Kgs, print height in meters
@@ -10,20 +10,19 @@ def calBMI():
     Weight = ____ lbs =  ____ Kg, 
     Height = ____ feet = ____ m, 
     BMI = ____"""
-    pass
-
-def getUserInput():
-    #Variables
-    userWeight = input("Enter your weight in pounds (lbs): ")
-    userHeight = input("Enter your height in feet (ft): ")
-    calcBMI(userWeight, userHeight)
-
-def calcBMI(userWeight, userHeight):
+    
     #Check to see if input is numerical
-    if not str(userWeight).isnumeric() or not str(userHeight).isnumeric():
-        print("Invalid entry")
-        return -1
-    if int(userWeight) == 0 or int(userHeight) == 0:
+    if '.' in userWeight: 
+        try:
+            float(userWeight)
+        except ValueError:
+            return -1
+    if '.' in userHeight:
+        try:
+            float(userHeight)
+        except ValueError:
+            return -1
+    if float(userWeight) == 0 or float(userHeight) == 0:
         print ("Invalid weight or height")
         getUserInput()
     else:
@@ -42,5 +41,11 @@ def calcBMI(userWeight, userHeight):
         print('Weight = {0} lbs = {1} Kg,'.format(format(weightFloat,".3f"), format(lbs2kg,".3f")))
         print('Height = {0} feet = {1} m,'.format(format(heightFloat,".3f"), format(ft2m,".3f"))) 
         print('BMI = {0}'.format(format(BMI,".3f")))
-        
+
+def getUserInput():
+    #Variables
+    userWeight = input("Enter your weight in pounds (lbs): ")
+    userHeight = input("Enter your height in feet (ft): ")
+    calBMI(userWeight, userHeight)
+   
 getUserInput()
