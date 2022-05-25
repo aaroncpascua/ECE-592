@@ -3,6 +3,7 @@ import string
 import random
 import os.path
 import csv
+import itertools
 
 def gen_code_file(secretword:str, freq:int, maxlength:int):
     """Take user inputted secret word, frequency the secret word is shown,
@@ -109,6 +110,9 @@ def findWord(filename:str, word:str):
         return -1
     
 def dataSorter(filename:str):
+    """Reads a 2 x n csv file with categories and values then organizes the
+    data by category"""
+    
     dict = {}
     
     #Open csv, create keys, and append to keys
@@ -116,20 +120,35 @@ def dataSorter(filename:str):
         csvreader = csv.reader(csvfile, delimiter=',')
         next(csvreader)
         headers = []
+        
+        #Populate Dictionary of lists
         for row in csvreader:
             category = row[0]
             value = row[1]
             if not category in dict:
                 dict.update({category: []})
-                dict[category].append(value)
+                if value.isnumeric():
+                    dict[category].append(int(value))
+                else:
+                    dict[category].append(value)
                 headers.append(category)
             else:
-                dict[category].append(value)
-    #Create csv file and write keys as headers and their respective values
-    with open('sorteddata.csv', 'w') as file:
-        writer = csv.DictWriter(file, fieldnames=headers)
-        writer.writerow()
+                if value.isnumeric():
+                    dict[category].append(int(value))
+                else:
+                    dict[category].append(value)
+          
+        #Store dictionary data into a horizontal table then transpose
+        horizontalTable = []
+        dataList = []
+        for header in sorted(headers):
+            dataList = sorted(dict[header])
+            dataList.insert(0, header)
+            horizontalTable.append(dataList)           
+        verticalTable = list(map(list, itertools.zip_longest(*horizontalTable, fillvalue=None)))
         
-                
-    
-dataSorter('E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/answer.csv')
+    #Create csv file and write keys as headers and their respective values
+    with open('sorteddata.csv', 'w', newline='') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"')
+        writer.writerows(verticalTable)
+        file.close()
