@@ -152,3 +152,19 @@ def dataSorter(filename:str):
         writer = csv.writer(file, delimiter=',', quotechar='"')
         writer.writerows(verticalTable)
         file.close()
+        
+def dataRecorder(filename:str, record:dict):
+    if not os.path.isfile(filename):
+        file = open(filename, 'w', newline='')
+    else:
+        file = open(filename, 'a', newline='')
+        
+    writer = csv.writer(file, delimiter=',', quotechar='"')
+    
+    writeThis = []
+    for key in record:
+        writeThis.append(record[key])
+    writer.writerow(writeThis)
+    file.close
+    
+#dataRecorder('dataRecords.csv', {"Name": str,"Weight": float,"Height": float})
