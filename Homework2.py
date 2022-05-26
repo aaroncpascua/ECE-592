@@ -13,7 +13,7 @@ def gen_code_file(secretword:str, freq:int, maxlength:int):
     #Generate file path
     dateStr = datetime.date.today().strftime("%m%d%y")
     timeStr = datetime.datetime.now().time().strftime("%H%M")
-    filePath = 'E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/random_letters_new_{0}_{1}.txt'.format(dateStr, timeStr)
+    filePath = 'random_letters_new_{0}_{1}.txt'.format(dateStr, timeStr)
     
     #Open file and write maxlength of random ascii letters
     with open(filePath, 'w') as file:
@@ -76,7 +76,7 @@ def gen_code_file(secretword:str, freq:int, maxlength:int):
         file.close()
         i += 1
         
-    return (filePath, secretword)
+    findWord(filePath, secretword)
         
 def findWord(filename:str, word:str):
     """Opens a text file and finds the first index of a given word. Store every
@@ -156,15 +156,16 @@ def dataSorter(filename:str):
 def dataRecorder(filename:str, record:dict):
     if not os.path.isfile(filename):
         file = open(filename, 'w', newline='')
+        writer = csv.writer(file, delimiter=',', quotechar='"')
+        
+        headers = ['Name', 'Weight (lbs)', 'Height (ft)']
+        writer.writerow(headers)
     else:
         file = open(filename, 'a', newline='')
-        
-    writer = csv.writer(file, delimiter=',', quotechar='"')
-    
+        writer = csv.writer(file, delimiter=',', quotechar='"')
+          
     writeThis = []
     for key in record:
         writeThis.append(record[key])
     writer.writerow(writeThis)
     file.close
-    
-#dataRecorder('dataRecords.csv', {"Name": str,"Weight": float,"Height": float})
