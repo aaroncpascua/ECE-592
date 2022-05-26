@@ -1,7 +1,8 @@
 import math
 
 def pyramid(s):
-    """Takes a user input and creates a pyramid pattern of the letters
+    """
+    Takes a user input and creates a pyramid pattern of the letters
     in the string."""
     
     strList = []
@@ -10,7 +11,8 @@ def pyramid(s):
     print("\n".join(strList))
     
 def findSquares(s = 0.0, e = 0.0):
-    """Find and print a list of numbers which are exact squares of an 
+    """
+    Find and print a list of numbers which are exact squares of an 
     integer between two user inputted integer values."""
     
     #Find the lowest number of the two integers
@@ -36,8 +38,9 @@ def findSquares(s = 0.0, e = 0.0):
             perfRoots.append(x)
     return perfRoots
     
-def calSalary(h:float, r = 20):
-    """Calculate salary given number of hours and hourly rate. Calculates
+def calSalary(h:float, r = 20.0):
+    """
+    Calculate salary given number of hours and hourly rate. Calculates
     overtime rate if hours are greater than 40."""
     
     if h < 0:
@@ -54,6 +57,8 @@ def calSalary(h:float, r = 20):
 def calLetterGrade(points:float, gradescale = [98, 94, 91, 88, 85, 82, 79, 76, 73, 70, 67, 64]):
     """Calculates letter grade based on the points and the grade scale."""
     
+    #I used a dictionary here because I didn't think to loop through gradescale itself
+    #and i'm too lazy to make it loop through gradescale
     gradeDict = {
                 0: 'A+',
                 1: 'A',
@@ -71,24 +76,28 @@ def calLetterGrade(points:float, gradescale = [98, 94, 91, 88, 85, 82, 79, 76, 7
                 }
     
     #Check for invalid points input
-    if not str(int(points)).isnumeric():
-        print("Points is not numeric")
+    try:
+        float(points)
+    except ValueError:
+        print("points is not numeric")
         return -1
-    
-    #Check for duplicates
-    for x in gradescale:
-        if gradescale.count(x) > 1:
-            print("Duplicate in grade scale")
-            return -1
     
     #Check for invalid list input, else print letter grade
     counter = 0
     for x in gradescale:
-        if not str(x).isnumeric():
+        try:
+            int(x)
+        except ValueError:
             print("List member is not numeric")
             return -1
-        elif len(gradescale) > 12:
-            print("grade scale is larger than 12")
+        if isinstance(x, str):
+            print("List member is not numeric")
+            return -1
+        if len(gradescale) > 12:
+            print("gradescale is larger than 12")
+            return -1
+        if gradescale.count(x) > 1:
+            print("Duplicate in grade scale")
             return -1
         else:
             if points >= x:
