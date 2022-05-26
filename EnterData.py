@@ -1,6 +1,6 @@
 from Homework2 import *
 
-def getUserInput():
+def EnterData():
     """Takes in user input for their name, height in lbs and weight in feet"""
     
     #Variables
@@ -8,6 +8,7 @@ def getUserInput():
     userWeight = input("Enter your weight in pounds (lbs): ")
     userHeight = input("Enter your height in feet (ft): ")
     
+    #Check to see if input is numerical
     if '.' in userWeight: 
         try:
             float(userWeight)
@@ -19,8 +20,11 @@ def getUserInput():
         except ValueError:
             return -1
     if float(userWeight) == 0 or float(userHeight) == 0:
-        print ("Invalid weight or height")
-        getUserInput()
+        print ("Invalid weight or height\npoo")
+        EnterData()
+    if float(userWeight) < 0 or float(userHeight) < 0:
+        print ("Invalid weight or height\n")
+        EnterData()
     else:
         dict = {
             "Name": str,
