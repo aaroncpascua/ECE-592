@@ -81,6 +81,9 @@ def calLetterGrade(points:float, gradescale = [98, 94, 91, 88, 85, 82, 79, 76, 7
     except ValueError:
         print("points is not numeric")
         return -1
+    if isinstance(points, str):
+        print("points is not numeric")
+        return -1
     
     #Check for invalid list input, else print letter grade
     counter = 0
