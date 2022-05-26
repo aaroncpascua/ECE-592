@@ -23,7 +23,10 @@ def calBMI(userWeight, userHeight):
         except ValueError:
             return -1
     if float(userWeight) == 0 or float(userHeight) == 0:
-        print ("Invalid weight or height")
+        print ("Invalid weight or height\n")
+        getUserInput()
+    if float(userWeight) < 0 or float(userHeight) < 0:
+        print ("Invalid weight or height\n")
         getUserInput()
     else:
         #Convert user inputs to floats
