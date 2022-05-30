@@ -10,6 +10,10 @@ def gen_code_file(secretword:str, freq:int, maxlength:int):
     and how long the file length. The secret word will be randomly placed
     within the file given the frequency. Each line contains 250 characters"""
     
+    if not type(secretword) is str or not type(freq) is int or not type(maxlength) is int:
+        print("Improper input")
+        return -1
+    
     #Generate file path
     dateStr = datetime.date.today().strftime("%m%d%y")
     timeStr = datetime.datetime.now().time().strftime("%H%M")
@@ -83,6 +87,11 @@ def findWord(filename:str, word:str):
     the index of every instance of the word in a list and returns that list.
     Checks if the file exists or not. Returns -1 if file doesn't exist"""
     
+    #Check if variables are non strings
+    if not type(filename) is str or not type(word) is str:
+        print("Filename or word is a non-string")
+        return -1
+    
     if os.path.isfile(filename):
         file = open(filename, 'r')
         fileStrList = list(file.read())
@@ -111,47 +120,58 @@ def findWord(filename:str, word:str):
     
 def dataSorter(filename:str):
     """Reads a 2 x n csv file with categories and values then organizes the
-    data by category"""
+    data by category. Saves to a file called sorteddata.csv in your current
+    directory."""
     
     dict = {}
     
-    #Open csv, create keys, and append to keys
-    with open(filename, 'r') as csvfile:
-        csvreader = csv.reader(csvfile, delimiter=',')
-        next(csvreader)
-        headers = []
-        
-        #Populate Dictionary of lists
-        for row in csvreader:
-            category = row[0]
-            value = row[1]
-            if not category in dict:
-                dict.update({category: []})
-                if value.isnumeric():
-                    dict[category].append(int(value))
+    #Check if input is a string
+    if not type(filename) is str:
+        print("Input is non string")
+        return -1
+    
+    #Check to see if file exists
+    if not os.path.isfile(filename):
+        print("File doesn't exist >:(")
+        return -1
+    else:
+        #Open csv, create keys, and append to keys
+        with open(filename, 'r') as csvfile:
+            csvreader = csv.reader(csvfile, delimiter=',')
+            next(csvreader)
+            headers = []
+            
+            #Populate Dictionary of lists
+            for row in csvreader:
+                category = row[0]
+                value = row[1]
+                if not category in dict:
+                    dict.update({category: []})
+                    if value.isnumeric():
+                        dict[category].append(int(value))
+                    else:
+                        dict[category].append(value)
+                    headers.append(category)
                 else:
-                    dict[category].append(value)
-                headers.append(category)
-            else:
-                if value.isnumeric():
-                    dict[category].append(int(value))
-                else:
-                    dict[category].append(value)
-          
-        #Store dictionary data into a horizontal table then transpose
-        horizontalTable = []
-        dataList = []
-        for header in sorted(headers):
-            dataList = sorted(dict[header])
-            dataList.insert(0, header)
-            horizontalTable.append(dataList)           
-        verticalTable = list(map(list, itertools.zip_longest(*horizontalTable, fillvalue=None)))
-        
-    #Create csv file and write keys as headers and their respective values
-    with open('sorteddata.csv', 'w', newline='') as file:
-        writer = csv.writer(file, delimiter=',', quotechar='"')
-        writer.writerows(verticalTable)
-        file.close()
+                    if value.isnumeric():
+                        dict[category].append(int(value))
+                    else:
+                        dict[category].append(value)
+              
+            #Store dictionary data into a horizontal table then transpose
+            horizontalTable = []
+            dataList = []
+            for header in sorted(headers):
+                dataList = sorted(dict[header])
+                dataList.insert(0, header)
+                horizontalTable.append(dataList)           
+            verticalTable = list(map(list, itertools.zip_longest(*horizontalTable, fillvalue=None)))
+            
+        #Create csv file and write keys as headers and their respective values
+        with open('sorteddata.csv', 'w', newline='') as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"')
+            writer.writerows(verticalTable)
+            file.close()
         
 def dataRecorder(filename:str, record:dict):
     if not os.path.isfile(filename):
