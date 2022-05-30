@@ -1,7 +1,9 @@
 from Homework2 import *
 
 def EnterData():
-    """Takes in user input for their name, height in lbs and weight in feet"""
+    """
+    Takes in user input for their name, height in lbs and weight in feet.
+    Data is stored in your current directory called dataRecords.csv"""
     
     #Variables
     userName = input("Enter your name: ")
