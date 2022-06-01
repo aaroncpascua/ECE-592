@@ -147,24 +147,43 @@ def dataSorter(filename:str):
                 value = row[1]
                 if not category in dict:
                     dict.update({category: []})
-                    if value.isnumeric():
-                        dict[category].append(int(value))
-                    else:
-                        dict[category].append(value)
+                    if not value in dict[category]:                        
+                        if value.isnumeric():
+                            dict[category].append(value)
+                        else:
+                            dict[category].append(value)
                     headers.append(category)
                 else:
-                    if value.isnumeric():
-                        dict[category].append(int(value))
-                    else:
-                        dict[category].append(value)
+                    if not value in dict[category]:
+                        if value.isnumeric():
+                            dict[category].append(value)
+                        else:
+                            dict[category].append(value)
               
             #Store dictionary data into a horizontal table then transpose
             horizontalTable = []
             dataList = []
             for header in sorted(headers):
-                dataList = sorted(dict[header])
-                dataList.insert(0, header)
-                horizontalTable.append(dataList)           
+                if dict[header][0].isnumeric():
+                    counter = 0
+                    for dictString in dict[header]:
+                        dict[header][counter] = int(dictString)
+                        counter += 1
+                    dataList = sorted(dict[header])
+                    dataList.insert(0, header)
+                    horizontalTable.append(dataList)
+                elif isFloat(dict[header][0]):
+                    counter = 0
+                    for dictString in dict[header]:
+                        dict[header][counter] = int(dictString)
+                        counter += 1
+                    dataList = sorted(dict[header])
+                    dataList.insert(0, header)
+                    horizontalTable.append(dataList)
+                else:
+                    dataList = sorted(dict[header])
+                    dataList.insert(0, header)
+                    horizontalTable.append(dataList)           
             verticalTable = list(map(list, itertools.zip_longest(*horizontalTable, fillvalue=None)))
             
         #Create csv file and write keys as headers and their respective values
@@ -189,3 +208,13 @@ def dataRecorder(filename:str, record:dict):
         writeThis.append(record[key])
     writer.writerow(writeThis)
     file.close
+    
+def isFloat(num):
+    """Check if string is a float"""
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
+    
+dataSorter("E:/Documents/College/NCSU/ECE492/Homework2_Text_Files/answer.csv")
