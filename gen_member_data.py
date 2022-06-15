@@ -129,6 +129,3 @@ def findDuplicate(valueList, value):
     
     if (valueList.count(value) > 1): return True
     else: return False
-
-# %% Test Function
-gen_member_data()
