@@ -3,6 +3,9 @@ import random
 import datetime
 import dateutil
 import csv
+import os
+import string
+import random_address
 
 #Global Variables
 key = ['Mno', 'Fn', 'MI', 'Ln', 'DoB', 'Address', 'Status', 'msd', 'med', 'rdate', 'Phone', 'Email', 'Notes']
@@ -33,6 +36,9 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
 
         #Generate a random person's first name, last name, and birthday
         first_name, last_name, birthDay = genRandPerson()
+        
+        #Generate a random capital letter for middle initial
+        middleInitial = random.choice(string.ascii_letters).upper()
 
         #Generate random Membership Status from status[]
         memStatus = random.choice(status)
@@ -51,7 +57,7 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         #Add values to dictionary
         memberDict['Mno'].append(memNumStr)
         memberDict['Fn'].append(first_name)
-        memberDict['MI'].append('')
+        memberDict['MI'].append(middleInitial)
         memberDict['Ln'].append(last_name)
         memberDict['DoB'].append(birthDay)
         memberDict['Address'].append('')
@@ -66,9 +72,13 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         counter += 1
         
     #Create CSV and add create header with key[]
-    file = open(fname, 'w', newline='')
-    writer = csv.writer(file, delimiter=',', quotechar='"')
-    writer.writerow(key)
+    if not os.path.isfile(fname):
+        file = open(fname, 'w', newline='')
+        writer = csv.writer(file, delimiter=',', quotechar='"')
+        writer.writerow(key)
+    else:
+        file = open(fname, 'a', newline='')
+        writer = csv.writer(file, delimiter=',', quotechar='"')
     
     writerCounter = 0
     while writerCounter < no:
@@ -79,7 +89,7 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         
         writerCounter += 1
     file.close()
-    
+
 # %% Generate a random date
 def genRandDate(year, month, day, needRenewal):
     '''
