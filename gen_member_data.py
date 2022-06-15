@@ -39,6 +39,13 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         
         #Generate a random capital letter for middle initial
         middleInitial = random.choice(string.ascii_letters).upper()
+        
+        #Generate Random Addresses
+        try:
+            addressDict = random_address.real_random_address()
+            addressStr = addressDict['address1'] + ', ' + addressDict['city'] + ', ' + addressDict['state'] + ' ' + addressDict['postalCode']
+        except KeyError:
+            addressStr = addressDict['address1'] + ', Greensboro, ' + addressDict['state'] + ' ' + addressDict['postalCode']
 
         #Generate random Membership Status from status[]
         memStatus = random.choice(status)
@@ -46,13 +53,27 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         #Generate random Membership Start Date and Renewal Date starting from Dec 1 1980
         #If member status is None, Renewal Date is blank
         if (memStatus != 'None'):
-            memStartDate, memRenewalDate = genRandDate(1980,12,1,True)
+            memStartDate, memRenewalDate = genRandDate(1981,1,1,True)
+            memEndDate = ''
         else:
-            memStartDate, memRenewalDate = genRandDate(1980,12,1,True)
+            memStartDate, memEndDate = genRandDate(1981,1,1,False)
             memRenewalDate = ''
         
         #Generate random 10 digit phone number
         phoneStr = str(random.randint(1000000000,9999999999))
+        
+        #Generate email in the NCSU email format for funsies
+        usedEmailCounter = 0
+        reducedLastName = ""
+        reducedLastNameCounter = 0
+        while reducedLastNameCounter < 6:
+            if len(last_name) < 6:
+                reducedLastName = last_name
+                break
+            else:
+                reducedLastName += last_name[reducedLastNameCounter]
+                reducedLastNameCounter += 1
+        emailStr = generateNCSUEmail(first_name, middleInitial, reducedLastName, usedEmailCounter)
         
         #Add values to dictionary
         memberDict['Mno'].append(memNumStr)
@@ -60,13 +81,13 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         memberDict['MI'].append(middleInitial)
         memberDict['Ln'].append(last_name)
         memberDict['DoB'].append(birthDay)
-        memberDict['Address'].append('')
+        memberDict['Address'].append(addressStr)
         memberDict['Status'].append(memStatus)
         memberDict['msd'].append(memStartDate)
-        memberDict['med'].append('')
+        memberDict['med'].append(memEndDate)
         memberDict['rdate'].append(memRenewalDate)
         memberDict['Phone'].append(phoneStr)
-        memberDict['Email'].append('')
+        memberDict['Email'].append(emailStr)
         memberDict['Notes'].append('')
         
         counter += 1
@@ -91,29 +112,33 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
     file.close()
 
 # %% Generate a random date
-def genRandDate(year, month, day, needRenewal):
+def genRandDate(year, month, day, currentMember):
     '''
     Generate a random date starting from a given year, month, and day
     if false, return dayStr
     if true, return dayStr and renewalDate
     '''
     
-    startDate = datetime.date(year,month,day)
-    endDateY = int(datetime.date.today().strftime("%Y"))
-    endDateM = int(datetime.date.today().strftime("%m"))
-    endDateD = int(datetime.date.today().strftime("%d"))
-    endDate = datetime.date(endDateY, endDateM, endDateD)
-    timeBetween = endDate - startDate
-    daysBetween = timeBetween.days
-    getDay = startDate + datetime.timedelta(days=random.randrange(daysBetween))
-    getRenewal = getDay + dateutil.relativedelta.relativedelta(years=5)
-    dayStr = getDay.strftime("%B %d %Y")
+    originDate = datetime.date(year,month,day)
+    todayDateY = int(datetime.date.today().strftime("%Y"))
+    todayDateM = int(datetime.date.today().strftime("%m"))
+    todayDateD = int(datetime.date.today().strftime("%d"))
+    todayDate = datetime.date(todayDateY, todayDateM, todayDateD)
+    timeBetween1 = todayDate - originDate
+    daysBetween1 = timeBetween1.days
+    startDate = originDate + datetime.timedelta(days=random.randrange(daysBetween1))
+    startStr = startDate.strftime("%B %d %Y")
+    getRenewal = startDate + dateutil.relativedelta.relativedelta(years=5)
     renewalStr = getRenewal.strftime("%B %d %Y")
+    timeBetween2 = todayDate - startDate
+    daysBetween2 = timeBetween2.days
+    endDate = startDate + datetime.timedelta(days=random.randrange(daysBetween2))
+    endStr = endDate.strftime("%B %d %Y")
     
-    if not needRenewal:
-        return dayStr
+    if not currentMember:
+        return startStr, endStr
     else:
-        return dayStr, renewalStr
+        return startStr, renewalStr
     
 # %% Generate a random person
 def genRandPerson():
@@ -124,7 +149,7 @@ def genRandPerson():
     lname = names.get_last_name()
     
     #Generate random birthdays
-    birthDay = genRandDate(1904,2,11,False)
+    birthDay, throwAwayValue = genRandDate(1904,2,11,False)
     
     #Check for duplicate member of the same first name, last name, and birthday
     #If there is a duplicate, genRandPerson()
@@ -135,7 +160,29 @@ def genRandPerson():
 
 # %% Find duplicate in memberDict[key] list
 def findDuplicate(valueList, value):
-    '''Loop through memberDict[key] for any duplicates'''
+    '''
+    Loop through memberDict[key] for any duplicates. 
+    Return true for a duplicate
+    Return false for original
+    '''
     
     if (valueList.count(value) > 1): return True
     else: return False
+    
+def generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter):
+    if usedEmailCounter == 0:
+        emailStr = firstName[0].lower() + middleInitial.lower() + lastName.lower() + '@ncsu.edu'
+        if findDuplicate(memberDict['Email'], emailStr):
+            usedEmailCounter += 1
+            generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter)
+        else:
+            return emailStr
+    else:
+        emailStr = firstName[0].lower() + middleInitial.lower() + lastName.lower() + '{}@ncsu.edu'.format(usedEmailCounter)
+        if findDuplicate(memberDict['Email'], emailStr):
+            usedEmailCounter += 1
+            generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter)
+        else:
+            return emailStr
+    
+gen_member_data()
