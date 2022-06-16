@@ -167,6 +167,10 @@ def findDuplicate(valueList, value):
     
 # %% Generate email based on the NCSU email format
 def generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter):
+    '''
+    Take the first letter of first name, middle initial, and last name
+    up to 6 characters and create an @ncsu.edu email
+    '''
     if usedEmailCounter == 0:
         emailStr = firstName[0].lower() + middleInitial.lower() + lastName.lower() + '@ncsu.edu'
         if findDuplicate(memberDict['Email'], emailStr):
