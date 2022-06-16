@@ -93,13 +93,9 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         counter += 1
         
     #Create CSV and add create header with key[]
-    if not os.path.isfile(fname):
-        file = open(fname, 'w', newline='')
-        writer = csv.writer(file, delimiter=',', quotechar='"')
-        writer.writerow(key)
-    else:
-        file = open(fname, 'a', newline='')
-        writer = csv.writer(file, delimiter=',', quotechar='"')
+    file = open(fname, 'w', newline='')
+    writer = csv.writer(file, delimiter=',', quotechar='"')
+    writer.writerow(key)
     
     writerCounter = 0
     while writerCounter < no:
@@ -169,6 +165,7 @@ def findDuplicate(valueList, value):
     if (valueList.count(value) > 1): return True
     else: return False
     
+# %% Generate email based on the NCSU email format
 def generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter):
     if usedEmailCounter == 0:
         emailStr = firstName[0].lower() + middleInitial.lower() + lastName.lower() + '@ncsu.edu'
