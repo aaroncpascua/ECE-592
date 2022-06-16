@@ -3,7 +3,6 @@ import random
 import datetime
 import dateutil
 import csv
-import os
 import string
 import random_address
 
@@ -185,5 +184,3 @@ def generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter):
             generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter)
         else:
             return emailStr
-    
-gen_member_data()
