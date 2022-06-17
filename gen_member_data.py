@@ -34,7 +34,7 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         memNumStr = str(random.randint(100000,999999))
 
         #Generate a random person's first name, last name, and birthday
-        first_name, last_name, birthDay = genRandPerson()
+        first_name, last_name, birthDay = genRandPerson(memberDict)
         
         #Generate a random capital letter for middle initial
         middleInitial = random.choice(string.ascii_letters).upper()
@@ -72,7 +72,7 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
             else:
                 reducedLastName += last_name[reducedLastNameCounter]
                 reducedLastNameCounter += 1
-        emailStr = generateNCSUEmail(first_name, middleInitial, reducedLastName, usedEmailCounter)
+        emailStr = generateNCSUEmail(memberDict, first_name, middleInitial, reducedLastName, usedEmailCounter)
         
         #Add values to dictionary
         memberDict['Mno'].append(memNumStr)
@@ -136,7 +136,7 @@ def genRandDate(year, month, day, currentMember):
         return startStr, renewalStr
     
 # %% Generate a random person
-def genRandPerson():
+def genRandPerson(tempDict):
     '''Generates a random first name, last name, and birthday'''
     
     #Generate random first and last names
@@ -148,31 +148,37 @@ def genRandPerson():
     
     #Check for duplicate member of the same first name, last name, and birthday
     #If there is a duplicate, genRandPerson()
-    if (findDuplicate(memberDict['Fn'], fname) and findDuplicate(memberDict['Ln'], lname) and findDuplicate(memberDict['DoB'], birthDay)):
-        fname, lname, birthDay = genRandPerson()
+    if (findDuplicate(tempDict, fname, lname, birthDay)):
+        fname, lname, birthDay = genRandPerson(tempDict)
     
     return fname, lname, birthDay
 
 # %% Find duplicate in memberDict[key] list
-def findDuplicate(valueList, value):
+def findDuplicate(tempDict, firstName, lastName, DoB):
     '''
     Loop through memberDict[key] for any duplicates. 
     Return true for a duplicate
     Return false for original
     '''
     
-    if (valueList.count(value) > 1): return True
+    duplicateCheck = 0
+    
+    if (tempDict['Fn'].count(firstName) > 1): duplicateCheck += 1
+    if (tempDict['Ln'].count(lastName) > 1): duplicateCheck += 1
+    if (tempDict['DoB'].count(DoB) > 1): duplicateCheck += 1
+    
+    if duplicateCheck == 3: return True
     else: return False
     
 # %% Generate email based on the NCSU email format
-def generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter):
+def generateNCSUEmail(tempDict, firstName, middleInitial, lastName, usedEmailCounter):
     '''
     Take the first letter of first name, middle initial, and last name
     up to 6 characters and create an @ncsu.edu email
     '''
     if usedEmailCounter == 0:
         emailStr = firstName[0].lower() + middleInitial.lower() + lastName.lower() + '@ncsu.edu'
-        if findDuplicate(memberDict['Email'], emailStr):
+        if tempDict['Email'].count(emailStr) > 1:
             usedEmailCounter += 1
             generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter)
         else:
