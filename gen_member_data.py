@@ -1,10 +1,10 @@
-import names
+import names #isntall
 import random
 import datetime
-import dateutil
+import dateutil #install
 import csv
 import string
-import random_address
+import random_address #install
 
 #Global Variables
 key = ['Mno', 'Fn', 'MI', 'Ln', 'DoB', 'Address', 'Status', 'msd', 'med', 'rdate', 'Phone', 'Email', 'Notes']
