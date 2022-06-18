@@ -14,7 +14,6 @@ status = ['Basic', 'Silver', 'Gold', 'Platinum', 'None']
 break_program = False
 regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
 statusUpdated = "Manage Members"
-returnMenu = False
 
 # %% Manage Members Menu
 def Manage_members(): # Add status updated print
@@ -37,7 +36,7 @@ def Manage_members(): # Add status updated print
     if userInput == 'a':
         addNewMember(globals()['memberDict'])
     elif userInput == 'b':
-        removeMember(globals()['memberDict'])
+        searchMembers(globals()['memberDict'], True)
     elif userInput == 'c':
         return
     elif userInput == 'd':
@@ -45,7 +44,7 @@ def Manage_members(): # Add status updated print
     elif userInput == 'e':
         return
     elif userInput == 'f':
-        searchMembers(globals()['memberDict'])
+        searchMembers(globals()['memberDict'], False)
     elif userInput == 'g':
         return
     elif userInput == 'h':
@@ -252,7 +251,7 @@ def addNewMember(tempDict):
         print(addNewMemberStr)
         if warningBool:
             print('Warning: Invalid Input\n')
-        print("Required:\nFormat: (username)@(domainname).(top-leveldomain)\n")
+        print("Optional:\nFormat: (username)@(domainname).(top-leveldomain)\n")
         inputEmail = input("Enter email: ")
         if inputEmail == '':
             inputEmailBool = True
@@ -299,11 +298,39 @@ def addNewMember(tempDict):
     Manage_members()
 
 # %% Remove member
-def removeMember(tempDict):
-    return
-
+def removeMember(tempDict, optionSelected, tableStr):
+    print(optionSelected)
+    print(tableStr)
+    
+    membershipNumList = []
+    for memNum in tempDict['Mno']:
+        membershipNumList.append(memNum)
+        
+    actualDictionary = globals()['memberDict']
+    loopBool = False
+    showWarning = False
+    while not loopBool:
+        if showWarning:
+            print("Invalid Input\n")
+        deleteMember = input("Choose Mno to remove: ")
+        if deleteMember in tempDict['Mno']:
+            for i in range(len(actualDictionary['Mno'])):
+                if deleteMember in actualDictionary['Mno'][i]:
+                    todayDate = datetime.date.today()
+                    actualDictionary['med'][i] = todayDate.strftime('%B %d %Y')
+                    actualDictionary['rdate'][i] = ''
+                    firstName = actualDictionary['Fn'][i]
+                    lastName = actualDictionary['Ln'][i]
+                    writeCSV(actualDictionary)
+                    loopBool = True
+        else:
+            showWarning = True
+            continue
+    
+        return firstName, lastName        
+    
 # %% Search Members
-def searchMembers(tempDict):
+def searchMembers(tempDict, deleteMember):
     searchOptions = "Search options:\n"
     
     Mno, Fn, MI, Ln, DoB, Address, Status, msd, med, rdate, Phone, Email, Notes = "", "", "", "", "", "", "", "", "", "", "", "", ""
@@ -404,8 +431,50 @@ def searchMembers(tempDict):
             showWarning = True
             continue
         
-        tabulatedResults = tabulate(resultList, headers=globals()['key'])
-        showResults = True
+        searchOptions += MnoStr + Mno + "\n"
+        searchOptions += FnStr + Fn + "\n"  
+        searchOptions += MIStr + MI + "\n" 
+        searchOptions += LnStr + Ln + "\n"
+        searchOptions += DoBStr + DoB + "\n"
+        searchOptions += AddressStr + Address + "\n"
+        searchOptions += StatusStr + Status + "\n" 
+        searchOptions += msdStr + msd + "\n"
+        searchOptions += medStr + med + "\n"
+        searchOptions += rdateStr + rdate + "\n"
+        searchOptions += PhoneStr + Phone + "\n"
+        searchOptions += EmailStr + Email + "\n"
+        searchOptions += NotesStr + Notes + "\n"
+        
+        if len(resultList) > 10:
+            printCheckBool = False
+            showWarning1 = False
+            while not printCheckBool:
+                if showWarning1:
+                    print("Warning: Invalid Input\n")
+                printCheck = input("More than 10 members are matching the critera, print? (Y/N): ").upper()
+                if printCheck == 'Y':
+                    tabulatedResults = tabulate(resultList, headers=globals()['key'])
+                    if deleteMember:
+                        firstName, lastName = removeMember(tempDict, searchOptions, tabulatedResults)
+                        globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName
+                        Manage_members()
+                    else:
+                        showResults = True
+                        printCheckBool = True
+                        showWarning = False
+                if printCheck == 'N':
+                    searchMembers(globals()['memberDict'])
+                else:
+                    showWarning = True
+                    continue
+        else:
+            tabulatedResults = tabulate(resultList, headers=globals()['key'])
+            if deleteMember:
+                removeMember(tempDict, searchOptions, tabulatedResults)
+                globals()['statusUpdated'] = "Deleted member" + firstName + " " + lastName
+                Manage_members()
+            else:
+                showResults = True
         
 # %% Read CSV and return dictionary with member data
 def readMemberCSV():
@@ -487,7 +556,7 @@ def searchDictionary(dictionary, key, searchVal):
         for k in dictionary:
             memberInfo.append(dictionary[k][j])
         searchResults.append(memberInfo)
-            
+     
     for i in range(0, len(globals()['key'])):
         searchDict[globals()['key'][i]] = []
         
@@ -504,9 +573,6 @@ def searchDictionary(dictionary, key, searchVal):
 def on_press(key):
     global break_program
     global startProgram
-    if key == keyboard.Key.esc and globals()['returnMenu']:
-        Manage_members()
-        #os.execl(sys.executable, sys.executable, *sys.argv)
     if key == keyboard.Key.esc:
         os.system('clear')
         print ('Program exited')
