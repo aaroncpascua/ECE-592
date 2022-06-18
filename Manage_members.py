@@ -14,6 +14,8 @@ status = ['Basic', 'Silver', 'Gold', 'Platinum', 'None']
 break_program = False
 regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
 statusUpdated = "Manage Members"
+deleteMember = False
+upgradeDowngrade = False
 
 # %% Manage Members Menu
 def Manage_members(): # Add status updated print
@@ -36,15 +38,19 @@ def Manage_members(): # Add status updated print
     if userInput == 'a':
         addNewMember(globals()['memberDict'])
     elif userInput == 'b':
-        searchMembers(globals()['memberDict'], True)
+        globals()['deleteMember'] = True
+        searchMembers(globals()['memberDict'])
+        globals()['deleteMember'] = False
     elif userInput == 'c':
-        return
+        globals()['upgradeDowngrade'] = True
+        searchMembers(globals()['memberDict'])
+        globals()['upgradeDowngrade'] = False
     elif userInput == 'd':
         return
     elif userInput == 'e':
         return
     elif userInput == 'f':
-        searchMembers(globals()['memberDict'], False)
+        searchMembers(globals()['memberDict'])
     elif userInput == 'g':
         return
     elif userInput == 'h':
@@ -298,10 +304,7 @@ def addNewMember(tempDict):
     Manage_members()
 
 # %% Remove member
-def removeMember(tempDict, optionSelected, tableStr):
-    print(optionSelected)
-    print(tableStr)
-    
+def removeMember(tempDict, optionSelected, tableStr):  
     membershipNumList = []
     for memNum in tempDict['Mno']:
         membershipNumList.append(memNum)
@@ -310,6 +313,9 @@ def removeMember(tempDict, optionSelected, tableStr):
     loopBool = False
     showWarning = False
     while not loopBool:
+        os.system('clear')
+        print(optionSelected)
+        print(tableStr + "\n")
         if showWarning:
             print("Invalid Input\n")
         deleteMember = input("Choose Mno to remove: ")
@@ -319,6 +325,7 @@ def removeMember(tempDict, optionSelected, tableStr):
                     todayDate = datetime.date.today()
                     actualDictionary['med'][i] = todayDate.strftime('%B %d %Y')
                     actualDictionary['rdate'][i] = ''
+                    actualDictionary['Status'][i] = 'None'
                     firstName = actualDictionary['Fn'][i]
                     lastName = actualDictionary['Ln'][i]
                     writeCSV(actualDictionary)
@@ -329,8 +336,55 @@ def removeMember(tempDict, optionSelected, tableStr):
     
         return firstName, lastName        
     
+# %% Upgrade/Downgrade Memberships
+def upgradeDowngradeFunc(tempDict, optionSelected, tableStr):    
+    membershipNumList = []
+    for memNum in tempDict['Mno']:
+        membershipNumList.append(memNum)
+        
+    actualDictionary = globals()['memberDict']
+    loopBool = False
+    showWarning = False
+    while not loopBool:
+        os.system('clear')
+        print(optionSelected)
+        print(tableStr + "\n")
+        if showWarning:
+            print("Invalid Input\n")
+        deleteMember = input("Choose Mno to upgrade or downgrade: ")
+        if deleteMember in tempDict['Mno']:
+            loopBool1 = False
+            showWarning = False
+            while not loopBool1:
+                os.system('clear')
+                print(optionSelected)
+                print(tableStr + "\n")
+                if showWarning:
+                    print("Invalid Input\n")
+                upgradeChoice = input("Enter new Status ['Basic', 'Silver', 'Gold', 'Platinum']: ")
+                if upgradeChoice in globals()['status'].pop(4):
+                    for i in range(len(actualDictionary['Mno'])):
+                        if deleteMember in actualDictionary['Mno'][i]:
+                            todayPlusOneYear = datetime.date.today() + datetime.timedelta(days=365)
+                            todayPlusOneYearStr = todayPlusOneYear.strftime('%B %d %Y')
+                            actualDictionary['med'][i] = ''
+                            actualDictionary['rdate'][i] = todayPlusOneYearStr
+                            actualDictionary['Status'][i] = upgradeChoice
+                            firstName = actualDictionary['Fn'][i]
+                            lastName = actualDictionary['Ln'][i]
+                            writeCSV(actualDictionary)
+                            loopBool = True
+                else:
+                    showWarning = True
+                    continue
+        else:
+            showWarning = True
+            continue
+    
+        return firstName, lastName, upgradeChoice
+
 # %% Search Members
-def searchMembers(tempDict, deleteMember):
+def searchMembers(tempDict):
     searchOptions = "Search options:\n"
     
     Mno, Fn, MI, Ln, DoB, Address, Status, msd, med, rdate, Phone, Email, Notes = "", "", "", "", "", "", "", "", "", "", "", "", ""
@@ -431,6 +485,7 @@ def searchMembers(tempDict, deleteMember):
             showWarning = True
             continue
         
+        searchOptions = ''
         searchOptions += MnoStr + Mno + "\n"
         searchOptions += FnStr + Fn + "\n"  
         searchOptions += MIStr + MI + "\n" 
@@ -454,9 +509,13 @@ def searchMembers(tempDict, deleteMember):
                 printCheck = input("More than 10 members are matching the critera, print? (Y/N): ").upper()
                 if printCheck == 'Y':
                     tabulatedResults = tabulate(resultList, headers=globals()['key'])
-                    if deleteMember:
+                    if globals()['deleteMember']:
                         firstName, lastName = removeMember(tempDict, searchOptions, tabulatedResults)
                         globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName
+                        Manage_members()
+                    if globals()['upgradeDowngrade']:
+                        firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
+                        globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName + " Status changed to " + statusChange
                         Manage_members()
                     else:
                         showResults = True
@@ -469,9 +528,13 @@ def searchMembers(tempDict, deleteMember):
                     continue
         else:
             tabulatedResults = tabulate(resultList, headers=globals()['key'])
-            if deleteMember:
+            if globals()['deleteMember']:
                 removeMember(tempDict, searchOptions, tabulatedResults)
                 globals()['statusUpdated'] = "Deleted member" + firstName + " " + lastName
+                Manage_members()
+            if globals()['upgradeDowngrade']:
+                firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
+                globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName + " Status changed to " + statusChange
                 Manage_members()
             else:
                 showResults = True
