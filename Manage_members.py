@@ -21,7 +21,7 @@ modifyMemberBool = False
 # %% Manage Members Menu
 def Manage_members(): # Add status updated print
     os.system('clear')
-    globals()['memberDict'] = readMemberCSV()
+    globals()['memberDict'] = readMemberCSV('memberdata.csv')
     
     print(statusUpdated + "\n")
     
@@ -51,12 +51,10 @@ def Manage_members(): # Add status updated print
         searchMembers(globals()['memberDict'])
         globals()['modifyMemberBool'] = False
     elif userInput == 'e':
-        return
+        importMembers(globals()['memberDict'])
     elif userInput == 'f':
         searchMembers(globals()['memberDict'])
     elif userInput == 'g':
-        return
-    elif userInput == 'h':
         return
     else:
         Manage_members()
@@ -64,7 +62,7 @@ def Manage_members(): # Add status updated print
 # %% Add New Member function
 def addNewMember(tempDict):
     os.system('clear')
-    addNewMemberStr = "Adding new member:\n"
+    addNewMemberStr = "Adding new member\n"
     print(addNewMemberStr)
     
     #Enter first name
@@ -618,6 +616,63 @@ def modifyMemberValue(inputVal):
     
     return newVal
 
+# %% Import members from csv or txt
+def importMembers(tempDict):
+    importStr = "Importing new members or modifying existing members\n"
+    
+    importBool = False
+    warningBool = False
+    while not importBool:
+        try:
+            os.system('clear')
+            print(importStr)
+            if warningBool:
+                print("File does not exist\n")
+            print("Example input: E:\\Documents\\College\\NCSU\\ECE492\\Manage_members.py\n")
+            importPath = input("Enter file path to import: ")
+        except FileNotFoundError:
+            warningBool = True
+            
+    importDict = {}
+    importDict = readMemberCSV(importPath)
+    
+    #Check if member is missing required attributes
+    emptyList = []
+    emptyRequiredDict = {}
+    #Create list with members with empty required values to print to user
+    emptyStr = ''
+    emptyIndeces = []
+    requiredList = ['Mno', 'Fn', 'Ln', 'DoB', 'Status', 'msd', 'rdate', 'Phone']
+    for i in range(len(emptyRequiredDict['Mno'])):
+        for key in importDict:
+            if emptyStr in importDict[key][i] and key in requiredList:
+                emptyIndeces.append(i)
+    for i in emptyIndeces:
+        memberInfo = []
+        for k in importDict:
+            memberInfo.append(importDict[k][i])
+        emptyList.append(memberInfo)
+    #Create dictionary to store members with empty required values
+    for i in range(0, len(globals()['key'])):
+        emptyRequiredDict[globals()['key'][i]] = []
+    for i in range(len(emptyList)):
+        member = emptyList[i]
+        for key in emptyRequiredDict:
+            emptyRequiredDict[key].append(member[i])
+    #Check if there are any missing members, if there are, prompt user if they want to add anyway
+    if not emptyList:
+        loopBool = False
+        warningBool = False
+        while not loopBool:
+            os.system('clear')
+            print(importStr)
+            if warningBool:
+                print("InvalidInput")
+            addMemberChoice = input('The following list have missing required attributes. Do you want to add anyway? (Y/N)').upper()
+            if
+                        
+                
+    
 # %% Search Members
 def searchMembers(tempDict):
     searchOptions = "Search options:\n"
@@ -783,9 +838,9 @@ def searchMembers(tempDict):
                 showResults = True
         
 # %% Read CSV and return dictionary with member data
-def readMemberCSV():
+def readMemberCSV(filePath):
     tempDict = {}
-    with open('memberdata.csv', mode='r') as inFile:
+    with open(filePath, mode='r') as inFile:
         keyReader = csv.reader(inFile)
         key = []
         key = next(keyReader)
@@ -849,7 +904,7 @@ def greaterThan5Years(renewDate):
     age = today.year - renewDate.year - ((today.month, today.day) < (renewDate.month, renewDate.day))
     return age
 
-# %% search through dictionary and return list of lists with member data
+# %% Search through dictionary and return list of lists with member data
 def searchDictionary(dictionary, key, searchVal):
     indeces = []
     searchResults = []
