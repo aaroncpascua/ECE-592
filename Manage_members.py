@@ -16,7 +16,7 @@ regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{
 statusUpdated = "Manage Members"
 deleteMember = False
 upgradeDowngrade = False
-modifyMember = False
+modifyMemberBool = False
 
 # %% Manage Members Menu
 def Manage_members(): # Add status updated print
@@ -47,9 +47,9 @@ def Manage_members(): # Add status updated print
         searchMembers(globals()['memberDict'])
         globals()['upgradeDowngrade'] = False
     elif userInput == 'd':
-        globals()['modifyMember'] = True
+        globals()['modifyMemberBool'] = True
         searchMembers(globals()['memberDict'])
-        globals()['modifyMember'] = False
+        globals()['modifyMemberBool'] = False
     elif userInput == 'e':
         return
     elif userInput == 'f':
@@ -373,9 +373,9 @@ def upgradeDowngradeFunc(tempDict, optionSelected, tableStr):
                             actualDictionary['med'][i] = ''
                             actualDictionary['rdate'][i] = todayPlusOneYearStr
                             actualDictionary['Status'][i] = upgradeChoice
+                            writeCSV(actualDictionary)
                             firstName = actualDictionary['Fn'][i]
                             lastName = actualDictionary['Ln'][i]
-                            writeCSV(actualDictionary)
                             loopBool = True
                             loopBool1 = True
                 else:
@@ -413,13 +413,15 @@ def modifyMember(tempDict, optionSelected, tableStr):
                 if showWarning:
                     print("Invalid Input\n")
                 attributeToModify = input("Enter Attribute to modify: ")
-                for j in len(globals()['key']):
-                    if attributeToModify in globals()['key']:
-                        newVal = modifyMemberValue(globals()['key'][j])                            
+                for j in range(len(globals()['key'])):
+                    if attributeToModify == globals()['key'][j]:
+                        modifiedValue = modifyMemberValue(globals()['key'][j])                            
                         for i in range(len(actualDictionary[attributeToModify])):
                             if memberToModify in actualDictionary['Mno'][i]:
-                                actualDictionary[attributeToModify][i]
+                                actualDictionary[attributeToModify][i] = modifiedValue
                                 writeCSV(actualDictionary)
+                                firstName = actualDictionary['Fn'][i]
+                                lastName = actualDictionary['Ln'][i]
                                 loopBool = True
                                 loopBool1 = True
                 else:
@@ -429,10 +431,12 @@ def modifyMember(tempDict, optionSelected, tableStr):
             showWarning = True
             continue
     
-        return firstName, lastName, upgradeChoice
+        return firstName, lastName, attributeToModify, modifiedValue
 
 # %% Modify member value
 def modifyMemberValue(inputVal):
+    newVal =''
+    modifyStr = 'Modifying Attribute: ' + inputVal + "\n"
     
     if inputVal == 'Fn':
         #Enter first name
@@ -440,7 +444,7 @@ def modifyMemberValue(inputVal):
         warningBool = False    
         while not inputFirstNameBool:
             os.system('clear')
-            print(addNewMemberStr)
+            print(modifyStr)
             if warningBool:
                 print('Warning: Invalid Input\n')
             print('First name format can only contain letters and special characters\n')
@@ -458,7 +462,7 @@ def modifyMemberValue(inputVal):
         while not inputMidInitialBool:      
             try:
                 os.system('clear')
-                print(addNewMemberStr)
+                print(modifyStr)
                 if warningBool:
                     print('Warning: Invalid Input\n')
                 print("Middle initial format can only contain a letter\n")
@@ -481,7 +485,7 @@ def modifyMemberValue(inputVal):
         warningBool = False
         while not inputLastNameBool:
             os.system('clear') 
-            print(addNewMemberStr)
+            print(modifyStr)
             if warningBool:
                 print('Warning: Invalid Input\n')
             print('Last name format can only contain letters and special characters\n')
@@ -498,7 +502,7 @@ def modifyMemberValue(inputVal):
         warningBool = False
         while not inputDoBBool:
             os.system('clear')
-            print(addNewMemberStr)
+            print(modifyStr)
             if warningBool:
                 print('Warning: Invalid Input\n')
             print("Date of Birth must be in the format like June 15 1996")
@@ -518,7 +522,7 @@ def modifyMemberValue(inputVal):
     #Enter address
     if inputVal == 'Address':
         os.system('clear')
-        print(addNewMemberStr)
+        print(modifyStr)
         print("This can literally be anything\n")
         newVal = input("Enter address: ")
         
@@ -527,7 +531,7 @@ def modifyMemberValue(inputVal):
         warningBool = False
         while not inputStatusBool:
             os.system('clear')
-            print(addNewMemberStr)
+            print(modifyStr)
             if warningBool:
                 print('Warning: Invalid Input\n')
             print("Enter Basic, Silver, Gold, or Platinum\n")
@@ -537,104 +541,80 @@ def modifyMemberValue(inputVal):
                 continue
             else:
                 inputStatusBool = True
-            
-    #Enter Member Start Date -- Can't do this
-    if inputVal == ''
-    inputMemStartDateBool = False
-    warningBool = False
-    while not inputMemStartDateBool:
-        os.system('clear')
-        print(addNewMemberStr)
-        if warningBool:
-            print('Warning: Invalid Input\n')
-        print("Required:\nMembership start date must be in the format like June 15 1996.") 
-        print("If blank, membership start date will be today's date.")
-        print("Date must be a valid date after December 31 1980.\n")
-        inputMemStartDate = input("Enter membership start date: ").capitalize()
-        try:
-            if inputMemStartDate.isspace() or inputMemStartDate == '':
-                inputMemStartDateBool = True
-                inputMemStartDate = datetime.date.today().strftime('%B %d %Y')
-                addNewMemberStr += "Membership Start Date: " + inputMemStartDate + "\n"
-            else:
-                datetime.datetime.strptime(inputMemStartDate, '%B %d %Y')
-                inputMemStartDateBool = True
-                addNewMemberStr += "Membership Start Date: " + inputMemStartDate + "\n"
-        except ValueError:
-            warningBool = True
-            continue
         
     #Enter Member Renewal Date
-    if inputVal == 'rdate'
-    inputMemRenewDateBool = False
-    warningBool = True
-    while not inputMemRenewDateBool:
-        if warningBool:
-            print('Warning: Invalid Input\n')
-        print("Membership renewal date must be in the format like June 15 1996.")
-        print("If blank, membership start date will be 1 year from membership start date")
-        print("Membership renewal date cannot be more than 5 years of today's date\n")
-        newVal = input("Enter membership renewal date: ").capitalize()
-        try:
-            if newVal != '':
-                compareRenewDate = datetime.datetime.strptime(newVal, '%B %d %Y').date()
-                fiveYearsFuture = datetime.date.today() + datetime.timedelta(days=1826)
-                if compareRenewDate > fiveYearsFuture:
-                    warningBool = True
-                    continue
-            if newVal.isspace() or newVal == '':
-                inputMemRenewDateBool = True
-                inputMemRenewDate0 = datetime.date.today() + datetime.timedelta(days=365)
-                inputMemRenewDate = inputMemRenewDate0.strftime('%B %d %Y')
-            else:
-                datetime.datetime.strptime(inputMemRenewDate, '%B %d %Y')
-                inputMemRenewDateBool = True
-        except ValueError:
-            warningBool = True
-            continue
+    if inputVal == 'rdate':
+        inputMemRenewDateBool = False
+        warningBool = True
+        while not inputMemRenewDateBool:
+            os.system('clear')
+            print(modifyStr)
+            if warningBool:
+                print('Warning: Invalid Input\n')
+            print("Membership renewal date must be in the format like June 15 1996.")
+            print("If blank, membership start date will be 1 year from membership start date")
+            print("Membership renewal date cannot be more than 5 years of today's date\n")
+            newVal = input("Enter membership renewal date: ").capitalize()
+            try:
+                if newVal != '':
+                    compareRenewDate = datetime.datetime.strptime(newVal, '%B %d %Y').date()
+                    fiveYearsFuture = datetime.date.today() + datetime.timedelta(days=1826)
+                    if compareRenewDate > fiveYearsFuture:
+                        warningBool = True
+                        continue
+                if newVal.isspace() or newVal == '':
+                    inputMemRenewDateBool = True
+                    inputMemRenewDate0 = datetime.date.today() + datetime.timedelta(days=365)
+                    inputMemRenewDate = inputMemRenewDate0.strftime('%B %d %Y')
+                else:
+                    datetime.datetime.strptime(inputMemRenewDate, '%B %d %Y')
+                    inputMemRenewDateBool = True
+            except ValueError:
+                warningBool = True
+                continue
     
     #Enter Phone number
-    if inputVal == 'Phone'
-    inputPhoneNumBool = False
-    warningBool = False
-    while not inputPhoneNumBool:
-        os.system('clear')
-        print(addNewMemberStr)
-        if warningBool:
-            print('Warning: Invalid Input\n')
-        print("Enter 10 digit phone number. Phone number cannot start with 0\n")
-        newVal = input("Enter phone number (Example: 3367401337): ")
-        if not newVal.isnumeric() or len(newVal) != 10 or newVal[0] == '0':
-            warningBool = True
-            continue
-        else:
-            inputPhoneNumBool = True
+    if inputVal == 'Phone':
+        inputPhoneNumBool = False
+        warningBool = False
+        while not inputPhoneNumBool:
+            os.system('clear')
+            print(modifyStr)
+            if warningBool:
+                print('Warning: Invalid Input\n')
+            print("Enter 10 digit phone number. Phone number cannot start with 0\n")
+            newVal = input("Enter phone number (Example: 3367401337): ")
+            if not newVal.isnumeric() or len(newVal) != 10 or newVal[0] == '0':
+                warningBool = True
+                continue
+            else:
+                inputPhoneNumBool = True
             
     #Enter email
-    if inputVal == 'Email'
-    inputEmailBool = False
-    warningBool = False
-    while not inputEmailBool:
-        os.system('clear')
-        print(addNewMemberStr)
-        if warningBool:
-            print('Warning: Invalid Input\n')
-        print("Format: (username)@(domainname).(top-leveldomain)\n")
-        newVal = input("Enter email: ")
-        if newVal == '':
-            inputEmailBool = True
-        if not re.fullmatch(regex, newVal):
-            warningBool = True
-            continue
-        else:
-            inputEmailBool = True
+    if inputVal == 'Email':
+        inputEmailBool = False
+        warningBool = False
+        while not inputEmailBool:
+            os.system('clear')
+            print(modifyStr)
+            if warningBool:
+                print('Warning: Invalid Input\n')
+            print("Format: (username)@(domainname).(top-leveldomain)\n")
+            newVal = input("Enter email: ")
+            if newVal == '':
+                inputEmailBool = True
+            if not re.fullmatch(regex, newVal):
+                warningBool = True
+                continue
+            else:
+                inputEmailBool = True
     
     #Enter Notes
-    if inputVal == 'Notes'
-    os.system('clear')
-    print(addNewMemberStr)
-    print("This can literally be anything\n")
-    newVal = input("Any notes you want to add to your membership?: ")
+    if inputVal == 'Notes':
+        os.system('clear')
+        print(modifyStr)
+        print("This can literally be anything\n")
+        newVal = input("Any notes you want to add to your membership?: ")
     
     return newVal
 
@@ -773,8 +753,8 @@ def searchMembers(tempDict):
                         globals()['statusUpdated'] = firstName + " " + lastName + " Status changed to " + statusChange
                         Manage_members()
                     if globals()['modifyMember']:
-                        firstName, lastName, keyChange, valueChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
-                        globals()['statusUpdated'] = firstName + " " + lastName +  " " + keyChange "changed to " + valueChange
+                        firstName, lastName, keyChange, valueChange = modifyMember(tempDict, searchOptions, tabulatedResults)
+                        globals()['statusUpdated'] = firstName + " " + lastName +  " " + keyChange + "changed to " + valueChange
                         Manage_members()
                     else:
                         showResults = True
@@ -794,6 +774,10 @@ def searchMembers(tempDict):
             if globals()['upgradeDowngrade']:
                 firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
                 globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName + " Status changed to " + statusChange
+                Manage_members()
+            if globals()['modifyMember']:
+                firstName, lastName, keyChange, valueChange = modifyMember(tempDict, searchOptions, tabulatedResults)
+                globals()['statusUpdated'] = firstName + " " + lastName +  " " + keyChange + "changed to " + valueChange
                 Manage_members()
             else:
                 showResults = True
