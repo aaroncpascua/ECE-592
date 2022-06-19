@@ -402,8 +402,8 @@ def modifyMember(tempDict, optionSelected, tableStr):
         print(tableStr + "\n")
         if showWarning:
             print("Invalid Input\n")
-        deleteMember = input("Choose Mno to modify: ")
-        if deleteMember in tempDict['Mno']:
+        memberToModify = input("Choose Mno to modify: ")
+        if memberToModify in tempDict['Mno']:
             loopBool1 = False
             showWarning = False
             while not loopBool1:
@@ -415,19 +415,13 @@ def modifyMember(tempDict, optionSelected, tableStr):
                 attributeToModify = input("Enter Attribute to modify: ")
                 for j in len(globals()['key']):
                     if attributeToModify in globals()['key']:
-                        modifyMemberValue(globals()['key'][j])                            
-                    for i in range(len(actualDictionary['Mno'])):
-                        if deleteMember in actualDictionary['Mno'][i]:
-                            todayPlusOneYear = datetime.date.today() + datetime.timedelta(days=365)
-                            todayPlusOneYearStr = todayPlusOneYear.strftime('%B %d %Y')
-                            actualDictionary['med'][i] = ''
-                            actualDictionary['rdate'][i] = todayPlusOneYearStr
-                            actualDictionary['Status'][i] = upgradeChoice
-                            firstName = actualDictionary['Fn'][i]
-                            lastName = actualDictionary['Ln'][i]
-                            writeCSV(actualDictionary)
-                            loopBool = True
-                            loopBool1 = True
+                        newVal = modifyMemberValue(globals()['key'][j])                            
+                        for i in range(len(actualDictionary[attributeToModify])):
+                            if memberToModify in actualDictionary['Mno'][i]:
+                                actualDictionary[attributeToModify][i]
+                                writeCSV(actualDictionary)
+                                loopBool = True
+                                loopBool1 = True
                 else:
                     showWarning = True
                     continue
@@ -575,8 +569,6 @@ def modifyMemberValue(inputVal):
     inputMemRenewDateBool = False
     warningBool = True
     while not inputMemRenewDateBool:
-        os.system('clear')
-        print(addNewMemberStr)
         if warningBool:
             print('Warning: Invalid Input\n')
         print("Membership renewal date must be in the format like June 15 1996.")
@@ -611,13 +603,12 @@ def modifyMemberValue(inputVal):
         if warningBool:
             print('Warning: Invalid Input\n')
         print("Enter 10 digit phone number. Phone number cannot start with 0\n")
-        inputPhoneNum = input("Enter phone number (Example: 3367401337): ")
-        if not inputPhoneNum.isnumeric() or len(inputPhoneNum) != 10 or inputPhoneNum[0] == '0':
+        newVal = input("Enter phone number (Example: 3367401337): ")
+        if not newVal.isnumeric() or len(newVal) != 10 or newVal[0] == '0':
             warningBool = True
             continue
         else:
             inputPhoneNumBool = True
-            addNewMemberStr += "Phone Number: " + inputPhoneNum + "\n"
             
     #Enter email
     if inputVal == 'Email'
@@ -629,24 +620,23 @@ def modifyMemberValue(inputVal):
         if warningBool:
             print('Warning: Invalid Input\n')
         print("Format: (username)@(domainname).(top-leveldomain)\n")
-        inputEmail = input("Enter email: ")
-        if inputEmail == '':
+        newVal = input("Enter email: ")
+        if newVal == '':
             inputEmailBool = True
-            addNewMemberStr += "Email: " + inputEmail + "\n"
-        if not re.fullmatch(regex, inputEmail):
+        if not re.fullmatch(regex, newVal):
             warningBool = True
             continue
         else:
             inputEmailBool = True
-            addNewMemberStr += "Email: " + inputEmail + "\n"
     
     #Enter Notes
     if inputVal == 'Notes'
     os.system('clear')
     print(addNewMemberStr)
     print("This can literally be anything\n")
-    inputNotes = input("Any notes you want to add to your membership?: ")
-    addNewMemberStr += "Notes: " + inputNotes + "\n"
+    newVal = input("Any notes you want to add to your membership?: ")
+    
+    return newVal
 
 # %% Search Members
 def searchMembers(tempDict):
@@ -781,6 +771,10 @@ def searchMembers(tempDict):
                     if globals()['upgradeDowngrade']:
                         firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
                         globals()['statusUpdated'] = firstName + " " + lastName + " Status changed to " + statusChange
+                        Manage_members()
+                    if globals()['modifyMember']:
+                        firstName, lastName, keyChange, valueChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
+                        globals()['statusUpdated'] = firstName + " " + lastName +  " " + keyChange "changed to " + valueChange
                         Manage_members()
                     else:
                         showResults = True
