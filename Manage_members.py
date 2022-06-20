@@ -6,6 +6,8 @@ from pynput import keyboard #install
 import time
 import re
 from tabulate import tabulate #install
+import argparse
+import pandas as pd
 
 # Global Variables
 memberDict = {}
@@ -19,6 +21,20 @@ statusUpdated = "Manage Members"
 deleteMember = False
 upgradeDowngrade = False
 modifyMemberBool = False
+
+# %% Help menu
+parser=argparse.ArgumentParser(
+    description=
+    """
+    This application manages members from a local file named 'memberdata.csv'.
+    """)
+parser.add_argument("mode", type=str, default="Status", help="Mode options: Status, Age, Year")
+parser.add_argument("-graph", "--graph", default="Status", 
+                    help="Status:This will plot a bar graph of number of members vs membership status/" + 
+                    "Age:This will plot bar graph of number of active members in following age category, 18-25, 25-35, 35-50, 50-65, >65/" + 
+                    "Year:Bar graph of number of new members added and number of members left vs year {1981 to 2019}",action="store_true")
+args=parser.parse_args()
+graphMembers(args)
 
 # %% Manage Members Menu
 def Manage_members(): # Add status updated print
@@ -638,6 +654,11 @@ def importMembers(tempDict):
             print("File does not exist\n")
         importPath = input("Enter file path to import: ")
         if os.path.exists(importPath):
+            if ".txt" in importPath:
+                txtToCSV = pd.read_csv(importPath)
+                FileName = importPath.split('.')
+                importPath = FileName[0] + ".csv"
+                txtToCSV.to_csv(importPath, index=None)
             importBool = True
         else:
             warningBool = True
