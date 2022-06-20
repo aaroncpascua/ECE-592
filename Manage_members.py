@@ -8,6 +8,9 @@ import re
 from tabulate import tabulate #install
 import argparse
 import pandas as pd
+import textwrap
+import sys
+import matplotlib.pyplot as plt
 
 # Global Variables
 memberDict = {}
@@ -21,20 +24,6 @@ statusUpdated = "Manage Members"
 deleteMember = False
 upgradeDowngrade = False
 modifyMemberBool = False
-
-# %% Help menu
-parser=argparse.ArgumentParser(
-    description=
-    """
-    This application manages members from a local file named 'memberdata.csv'.
-    """)
-parser.add_argument("mode", type=str, default="Status", help="Mode options: Status, Age, Year")
-parser.add_argument("-graph", "--graph", default="Status", 
-                    help="Status:This will plot a bar graph of number of members vs membership status/" + 
-                    "Age:This will plot bar graph of number of active members in following age category, 18-25, 25-35, 35-50, 50-65, >65/" + 
-                    "Year:Bar graph of number of new members added and number of members left vs year {1981 to 2019}",action="store_true")
-args=parser.parse_args()
-graphMembers(args)
 
 # %% Manage Members Menu
 def Manage_members(): # Add status updated print
@@ -73,7 +62,7 @@ def Manage_members(): # Add status updated print
     elif userInput == 'f':
         searchMembers(globals()['memberDict'])
     elif userInput == 'g':
-        return
+        bulkMemberOperation(globals()['memberDict'])
     else:
         Manage_members()
  
@@ -1184,6 +1173,41 @@ def searchDictionary(dictionary, keys, searchVals):
 
     return searchResults, searchDict, indeces
 
+def bulkMemberOperation(tempDict):
+    print('fuck you')
+
+# %% Make some graphs based on a mode
+def graphMembers(mode):
+    tempDict = readMemberCSV('memberdata.csv')
+    if mode.upper() == 'Status':
+        basicList, basicDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Basic'])
+        silverList, silverDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Silver'])
+        goldList, goldDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Gold'])
+        platinumList, platinumDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Platinum'])
+        noneList, noneDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['None'])
+        
+        numBasic = len(basicList)
+        numSilver = len(silverList)
+        numGold = len(goldList)
+        numPlatinum = len(platinumList)
+        numNone = len(noneList)
+        
+        fig = plt.figure(figsize = (10,5))
+        xLabels = ['Basic', 'Silver', 'Gold', 'Platinum', 'None']
+        yValues = [numBasic, numSilver, numGold, numPlatinum, numNone]
+        plt.bar(xLabels, yValues, color='maroon',width=0.4)
+        plt.title('Number of Members vs Status')
+        plt.xlabel('Status')
+        plt.ylabel('Number of members')
+        plt.show()
+        fig.show()
+    
+    if mode.upper() == 'Age':
+        print('fuck you')
+        
+    globals()['statusUpdated'] = "Generated " + mode.upper() + " plot"
+    Manage_members()
+        
 # %% Listen for escape key press
 def on_press(key):
     global break_program
@@ -1197,11 +1221,24 @@ def on_press(key):
 
 # %% Main function definition
 def main():
-    with keyboard.Listener(on_press=on_press) as listener:
-        while break_program == False:
-            Manage_members()
-            time.sleep(1)
-        listener.join()
-        
+    parser=argparse.ArgumentParser(
+        description="This application manages members from a local file named 'memberdata.csv'.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent('''\
+            Graph Information:
+                Status:This will plot a bar graph of number of members vs membership status 
+                Age:This will plot bar graph of number of active members in following age category, 18-25, 25-35, 35-50, 50-65, >65 + 
+                Year:Bar graph of number of new members added and number of members left vs year {1981 to 2019}",action="store_true'''))
+    parser.add_argument("-graph", "--graph", action='store', type=str, help="Graph member data using one of the following modes: Status, Age, Year")
+    if len(sys.argv) == 1:
+        with keyboard.Listener(on_press=on_press) as listener:
+            while break_program == False:
+                Manage_members()
+                time.sleep(1)
+            listener.join()
+    argumentStrings = sys.argv
+    graphMembers(argumentStrings[2])
+    
+           
 if __name__ == "__main__":
     main()
