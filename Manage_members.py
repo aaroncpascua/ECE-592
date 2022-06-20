@@ -10,9 +10,11 @@ from tabulate import tabulate #install
 # Global Variables
 memberDict = {}
 key = ['Mno', 'Fn', 'MI', 'Ln', 'DoB', 'Address', 'Status', 'msd', 'med', 'rdate', 'Phone', 'Email', 'Notes']
+requiredKey = ['Mno', 'Fn', 'Ln', 'DoB', 'Status', 'msd', 'rdate', 'Phone']
 status = ['Basic', 'Silver', 'Gold', 'Platinum', 'None']
 break_program = False
 regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+nameRegex = re.compile(r'([A-Z][a-z]+(?:-[A-Z][a-z]+)?)')
 statusUpdated = "Manage Members"
 deleteMember = False
 upgradeDowngrade = False
@@ -75,7 +77,7 @@ def addNewMember(tempDict):
             print('Warning: Invalid Input\n')
         print('Required:\nFirst name format can only contain letters and special characters\n')
         inputFirstName = input("Enter first name: ")
-        if any(chr.isdigit() for chr in inputFirstName):
+        if not re.fullmatch(nameRegex, inputFirstName):
             inputFirstNameBool = False
             warningBool = True
         else:
@@ -117,7 +119,7 @@ def addNewMember(tempDict):
             print('Warning: Invalid Input\n')
         print('Required:\nLast name format can only contain letters and special characters\n')
         inputLastName = input("Enter last name: ")
-        if any(chr.isdigit() for chr in inputLastName):
+        if not re.fullmatch(nameRegex, inputLastName):
             warningBool = True
             continue
         else:
@@ -189,6 +191,12 @@ def addNewMember(tempDict):
         print("Date must be a valid date after December 31 1980.\n")
         inputMemStartDate = input("Enter membership start date: ").capitalize()
         try:
+            originDate = datetime.date(1981,1,1)
+            inputDateObject = datetime.datetime.strptime(inputMemStartDate, '%B %d %Y').date()
+            timeBetween = (inputDateObject - originDate).days
+            if timeBetween < 0:
+                warningBool = True
+                continue
             if inputMemStartDate.isspace() or inputMemStartDate == '':
                 inputMemStartDateBool = True
                 inputMemStartDate = datetime.date.today().strftime('%B %d %Y')
@@ -305,7 +313,7 @@ def addNewMember(tempDict):
     Manage_members()
 
 # %% Remove member
-def removeMember(tempDict, optionSelected, tableStr):  
+def removeMember(tempDict, tableStr):  
     membershipNumList = []
     for memNum in tempDict['Mno']:
         membershipNumList.append(memNum)
@@ -315,7 +323,7 @@ def removeMember(tempDict, optionSelected, tableStr):
     showWarning = False
     while not loopBool:
         os.system('clear')
-        print(optionSelected)
+        print("Removing member\n")
         print(tableStr + "\n")
         if showWarning:
             print("Invalid Input\n")
@@ -338,7 +346,7 @@ def removeMember(tempDict, optionSelected, tableStr):
         return firstName, lastName        
     
 # %% Upgrade/Downgrade Membership
-def upgradeDowngradeFunc(tempDict, optionSelected, tableStr):    
+def upgradeDowngradeFunc(tempDict, tableStr):    
     membershipNumList = []
     for memNum in tempDict['Mno']:
         membershipNumList.append(memNum)
@@ -348,7 +356,7 @@ def upgradeDowngradeFunc(tempDict, optionSelected, tableStr):
     showWarning = False
     while not loopBool:
         os.system('clear')
-        print(optionSelected)
+        print("Upgrading or Downgrading member\n")
         print(tableStr + "\n")
         if showWarning:
             print("Invalid Input\n")
@@ -358,7 +366,7 @@ def upgradeDowngradeFunc(tempDict, optionSelected, tableStr):
             showWarning = False
             while not loopBool1:
                 os.system('clear')
-                print(optionSelected)
+                print("Upgrading or Downgrading member\n")
                 print(tableStr + "\n")
                 if showWarning:
                     print("Invalid Input\n")
@@ -386,7 +394,7 @@ def upgradeDowngradeFunc(tempDict, optionSelected, tableStr):
         return firstName, lastName, upgradeChoice
 
 # %% Modify Member
-def modifyMember(tempDict, optionSelected, tableStr):
+def modifyMember(tempDict, tableStr):
     membershipNumList = []
     for memNum in tempDict['Mno']:
         membershipNumList.append(memNum)
@@ -396,7 +404,7 @@ def modifyMember(tempDict, optionSelected, tableStr):
     showWarning = False
     while not loopBool:
         os.system('clear')
-        print(optionSelected)
+        print("Modifying member\n")
         print(tableStr + "\n")
         if showWarning:
             print("Invalid Input\n")
@@ -406,7 +414,7 @@ def modifyMember(tempDict, optionSelected, tableStr):
             showWarning = False
             while not loopBool1:
                 os.system('clear')
-                print(optionSelected)
+                print("Modifying member\n")
                 print(tableStr + "\n")
                 if showWarning:
                     print("Invalid Input\n")
@@ -623,219 +631,427 @@ def importMembers(tempDict):
     importBool = False
     warningBool = False
     while not importBool:
-        try:
-            os.system('clear')
-            print(importStr)
-            if warningBool:
-                print("File does not exist\n")
-            print("Example input: E:\\Documents\\College\\NCSU\\ECE492\\Manage_members.py\n")
-            importPath = input("Enter file path to import: ")
-        except FileNotFoundError:
+        os.system('clear')
+        print(importStr)
+        print("Example input: E:\\Documents\\College\\NCSU\\ECE492\\importmembers.csv\n")
+        if warningBool:
+            print("File does not exist\n")
+        importPath = input("Enter file path to import: ")
+        if os.path.exists(importPath):
+            importBool = True
+        else:
             warningBool = True
             
     importDict = {}
     importDict = readMemberCSV(importPath)
     
-    #Check if member is missing required attributes
-    emptyList = []
-    emptyRequiredDict = {}
-    #Create list with members with empty required values to print to user
-    emptyStr = ''
-    emptyIndeces = []
-    requiredList = ['Mno', 'Fn', 'Ln', 'DoB', 'Status', 'msd', 'rdate', 'Phone']
-    for i in range(len(emptyRequiredDict['Mno'])):
-        for key in importDict:
-            if emptyStr in importDict[key][i] and key in requiredList:
-                emptyIndeces.append(i)
-    for i in emptyIndeces:
+    memberExistList = []
+    memberExistIndeces = []
+    
+    #Create dictionary
+    memberExistDict = {}
+    for i in range(0, len(globals()['key'])):
+        memberExistDict[globals()['key'][i]] = []
+        
+    #Find members from csv who are duplicates
+    searchKeys = []
+    searchVals = []
+    searchType = []
+    for i in range(len(importDict['Mno'])):
+        firstNameExist = False
+        lastNameExist = False
+        dobExist = False 
+        if importDict['Fn'][i] in globals()['memberDict']['Fn']:
+            firstNameExist = True
+        if importDict['Ln'][i] in globals()['memberDict']['Ln']:
+            lastNameExist = True
+        if importDict['DoB'][i] in globals()['memberDict']['DoB']:
+            dobExist = True
+        if firstNameExist and lastNameExist and dobExist:
+            memberExistIndeces.append(i)
+            searchKeySub = []
+            searchKeySub.append('Fn')
+            searchKeySub.append('Ln')
+            searchKeySub.append('DoB')
+            searchKeys.append(searchKeySub)
+            searchValSub = []
+            searchValSub.append(importDict['Fn'][i])
+            searchValSub.append(importDict['Ln'][i])
+            searchValSub.append(importDict['DoB'][i])
+            searchVals.append(searchValSub)
+            searchType.append('other')
+            continue
+        if importDict['Mno'][i] in tempDict['Mno'][i]:
+            if importDict['Mno'][i] == '':
+                continue
+            memberExistIndeces.append(i)
+            searchKeySub = []
+            searchKeySub.append('Mno')
+            searchKeys.append(searchKeySub)
+            searchValSub = []
+            searchValSub.append(importDict['Mno'][i])
+            searchVals.append(searchValSub)
+            searchType.append('Mno')
+            continue
+            
+    #Create list with duplicate members
+    for i in memberExistIndeces:
         memberInfo = []
         for k in importDict:
             memberInfo.append(importDict[k][i])
-        emptyList.append(memberInfo)
-    #Create dictionary to store members with empty required values
+        memberExistList.append(memberInfo)
+    tabulatedResults = tabulate(memberExistList, headers=globals()['key'])
+    
+    #Create dictionary with duplicate members
+    for i in range(len(memberExistList)):
+        member = memberExistList[i]
+        j = 0
+        for key in memberExistDict:
+            memberExistDict[key].append(member[j])
+            j += 1
+    try:   
+        if memberExistList:
+            loopBool = False
+            warningBool = False
+            while not loopBool:
+                os.system('clear')
+                print(importStr)
+                print(tabulatedResults + "\n")
+                if warningBool:
+                    print("Invalid Input\n")
+                addMemberChoice = input('The list above are existing members. Do you want to overwrite their data? (Y/N): ').upper()
+                if addMemberChoice == 'Y':
+                    for i in range(len(memberExistIndeces)):
+                        resultList, resultDict, resultIndex = searchDictionary(globals()['memberDict'], searchKeys[i], searchVals[i])
+                        ri = resultIndex[0]
+                        mi = memberExistIndeces[i]
+                        for k in globals()['memberDict']:
+                            if searchType[i] == 'Mno':
+                                tempDict[k][ri] = importDict[k][mi]
+                            if searchType[i] == 'other':
+                                tempDict[k][ri] = importDict[k][mi]
+                    
+                    #remove member from members from dictionary
+                    removedIndex = 0
+                    for i in range(len(memberExistIndeces)):
+                        mi = memberExistIndeces[i] - removedIndex
+                        j = 0
+                        for k in globals()['memberDict']:
+                            if importDict[k][mi] == memberExistList[i][j]:
+                                importDict[k].pop(mi)
+                            j += 1
+                        removedIndex += 1
+                    writeCSV(tempDict)
+                    globals()['statusUpdated'] = "Overwrote member data"
+                    loopBool = True
+                if addMemberChoice == 'N':
+                    loopBool = True
+                    globals()['statusUpdated'] = "No members added from " + importPath
+                else:
+                    warningBool = True
+    except IndexError as error:
+        globals()['statusUpdated'] = "Issue modifying members: " + str(error)
+        Manage_members()
+    
+    #Create list to reduce for invalid attributes and blank required attributes
+    reduceList = []
+    reduceListIndeces = []
+    wrongAttributeTotal = 0
+    isRequiredEmptyList = []
+    
+    #Create dictionary
+    reducedDict = {}
     for i in range(0, len(globals()['key'])):
-        emptyRequiredDict[globals()['key'][i]] = []
-    for i in range(len(emptyList)):
-        member = emptyList[i]
-        for key in emptyRequiredDict:
-            emptyRequiredDict[key].append(member[i])
+        reducedDict[globals()['key'][i]] = []
+        
+    #Check if a required value is blank, store index into reduceListIndeces[]
+    for i in range(len(importDict['Mno'])):
+        for key in importDict:
+            if key in globals()['requiredKey']:
+                if importDict[key][i] == '':
+                    print(importDict[key][i])
+                    isRequiredEmptyList.append(i)
+                    break
+      
+    #Loop through each attribute of each member and see if there are attributes with invalid values
+    for i in range(len(importDict['Mno'])):                
+        for key in importDict:
+            wrongAttributeBool = False
+            
+            #Enter Mno
+            if key == 'Mno':
+                if importDict[key][i] == '':
+                    continue
+                inputMno = importDict[key][i]
+                if not inputMno.isnumeric() or len(inputMno) != 6 or inputMno[0] == '0':
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+            
+            #Enter first name
+            elif key == 'Fn':
+                if importDict[key][i] == '':
+                    continue
+                inputFirstName = importDict[key][i]
+                if not re.fullmatch(nameRegex, inputFirstName):
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+            
+            #Enter middle initial    
+            elif key == "MI":
+                if importDict[key][i] == '':
+                    continue
+                try:
+                    inputMidInitial = importDict[key][i]
+                    if len(inputMidInitial) > 1 or not inputMidInitial.isalnum() or any(chr.isdigit() for chr in inputMidInitial):
+                        wrongAttributeTotal += 1
+                        wrongAttributeBool = True
+                        break
+                except ValueError:
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+            
+            #Enter last name
+            elif key == 'Ln':
+                if importDict[key][i] == '':
+                    continue
+                inputLastName = importDict[key][i]
+                if not re.fullmatch(nameRegex, inputLastName):
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+            
+            #Enter date of birth
+            elif key == 'DoB':
+                if importDict[key][i] == '':
+                    continue
+                try:
+                    inputDateOfBirth = importDict[key][i].capitalize()
+                    checkAge = age(datetime.datetime.strptime(inputDateOfBirth, '%B %d %Y'))
+                    if checkAge < 18:
+                        wrongAttributeTotal += 1
+                        wrongAttributeBool = True
+                        break
+                except ValueError:
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+                
+            #if findDuplicate(tempDict, inputFirstName, inputLastName, inputDateOfBirth):
+            #    Manage_members()
+            
+            #Enter status
+            elif key == 'Status':
+                if importDict[key][i] == '':
+                    continue
+                inputStatus = importDict[key][i].capitalize()
+                if not inputStatus in status:
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+                    
+            #Enter Member Start Date
+            elif key == 'msd':
+                if importDict[key][i] == '':
+                    continue
+                try:
+                    inputMemStartDate = importDict[key][i].capitalize()
+                    originDate = datetime.date(1981,1,1)
+                    inputDateObject = datetime.datetime.strptime(inputMemStartDate, '%B %d %Y').date()
+                    timeBetween = (inputDateObject - originDate).days
+                    if timeBetween < 0:
+                        wrongAttributeTotal += 1
+                        wrongAttributeBool = True
+                        break
+                except ValueError:
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+                
+            #Enter Member Start Date
+            elif key == 'med':
+                if importDict[key][i] == '':
+                    continue
+                try:
+                    inputDateOfBirth = importDict[key][i].capitalize()
+                    datetime.datetime.strptime(inputDateOfBirth, '%B %d %Y')
+                except ValueError:
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+                
+            #Enter Member Renewal Date
+            elif key == 'rdate':
+                if importDict[key][i] == '':
+                    continue
+                try:
+                    inputMemRenewDate = importDict[key][i].capitalize()
+                    compareRenewDate = datetime.datetime.strptime(inputMemRenewDate, '%B %d %Y').date()
+                    fiveYearsFuture = datetime.date.today() + datetime.timedelta(days=1826)
+                    if compareRenewDate > fiveYearsFuture:
+                        wrongAttributeTotal += 1
+                        wrongAttributeBool = True
+                        break
+                    if inputMemRenewDate != '' and importDict['Status'][i] == 'None':
+                        wrongAttributeTotal += 1
+                        wrongAttributeBool = True
+                        break
+                except ValueError:
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+            
+            #Enter Phone number
+            elif key == 'Phone':
+                if importDict[key][i] == '':
+                    continue
+                inputPhoneNum = importDict[key][i]
+                if not inputPhoneNum.isnumeric() or len(inputPhoneNum) != 10 or inputPhoneNum[0] == '0':
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+                    
+            #Enter email
+            elif key == 'Email':
+                if importDict[key][i] == '':
+                    continue
+                inputEmail = importDict[key][i]
+                if not re.fullmatch(regex, inputEmail):
+                    wrongAttributeTotal += 1
+                    wrongAttributeBool = True
+                    break
+        if not wrongAttributeBool and i in isRequiredEmptyList:
+            reduceListIndeces.append(i)    
+      
+    #Store members with empty required values and proper attributes into reduceList[]
+    for i in reduceListIndeces:
+        memberInfo = []
+        for k in importDict:
+            memberInfo.append(importDict[k][i])
+        reduceList.append(memberInfo)
+    tabulatedResults = tabulate(reduceList, headers=globals()['key'])
+    
+    #Create dictionary to store members with empty required values
+    for i in range(len(reduceList)):
+        member = reduceList[i]
+        j = 0
+        for key in reducedDict:
+            reducedDict[key].append(member[j])
+            j += 1
+            
     #Check if there are any missing members, if there are, prompt user if they want to add anyway
-    if not emptyList:
+    if reduceList:
         loopBool = False
         warningBool = False
         while not loopBool:
             os.system('clear')
             print(importStr)
+            print(tabulatedResults + "\n")
+            print("There are " + str(wrongAttributeTotal) + " members with invalid attribute values. These members are not added.")
             if warningBool:
-                print("InvalidInput")
-            addMemberChoice = input('The following list have missing required attributes. Do you want to add anyway? (Y/N)').upper()
-            if
-                        
-                
-    
+                print("Invalid Input")
+            addMemberChoice = input('The list above have missing required attributes. Do you want to add anyway? (Y/N): ').upper()
+            if addMemberChoice == 'Y':
+                for i in range(len(reduceList)):
+                    for key in reducedDict:
+                        globals()['memberDict'][key].append(reducedDict[key][i])
+                writeCSV(globals()['memberDict'])
+                globals()['statusUpdated'] = "Added " + str(len(reduceList)) + " members from " + importPath
+                loopBool = True
+            if addMemberChoice == 'N':
+                loopBool = True
+                globals()['statusUpdated'] = "No members added from " + importPath
+            else:
+                warningBool = True
+        Manage_members()
+    else:
+        for i in range(len(importDict['Mno'])):
+            for key in importDict:
+                globals()['memberDict'][key].append(importDict[key][i])
+                writeCSV(globals()['memberDict'])
+        Manage_members()
+        
 # %% Search Members
 def searchMembers(tempDict):
-    searchOptions = "Search options:\n"
-    
-    Mno, Fn, MI, Ln, DoB, Address, Status, msd, med, rdate, Phone, Email, Notes = "", "", "", "", "", "", "", "", "", "", "", "", ""
-    
-    MnoStr = "Mno: "
-    FnStr = "Fn: "
-    MIStr = "MI: "
-    LnStr = "Ln: "
-    DoBStr = "DoB: "
-    AddressStr = "Address: "
-    StatusStr = "Status: "
-    msdStr = "msd: "
-    medStr = "med: "
-    rdateStr = "rdate: "
-    PhoneStr = "Phone: "
-    EmailStr = "Email: "
-    NotesStr = "Notes: "
-    
-    searchOptions += MnoStr + Mno + "\n"
-    searchOptions += FnStr + Fn + "\n"  
-    searchOptions += MIStr + MI + "\n" 
-    searchOptions += LnStr + Ln + "\n"
-    searchOptions += DoBStr + DoB + "\n"
-    searchOptions += AddressStr + Address + "\n"
-    searchOptions += StatusStr + Status + "\n" 
-    searchOptions += msdStr + msd + "\n"
-    searchOptions += medStr + med + "\n"
-    searchOptions += rdateStr + rdate + "\n"
-    searchOptions += PhoneStr + Phone + "\n"
-    searchOptions += EmailStr + Email + "\n"
-    searchOptions += NotesStr + Notes + "\n"
+    searchOptions = "Searching for members\n"
     
     loopDone = False
     showWarning = False
-    showResults = False
     tabulatedResults = ""
     while not loopDone:
+        strippedKey = []
+        strippedKeyValue = []
         os.system('clear')
         print(searchOptions)
-        if showResults:
-            print(tabulatedResults + "\n")
         if (showWarning):
             print("Warning: Invalid Input\n")
-        inputKey = input("Pick a search option: ")
-        if inputKey == 'Mno':
-            Mno = input("Mno = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Mno)
-        elif inputKey == 'Fn':
-            Fn = input("Fn = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Fn)
-        elif inputKey == 'MI':
-            MI = input("MI = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, MI)
-        elif inputKey == 'Ln':
-            Ln = input("Ln = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Ln)
-        elif inputKey == 'DoB':
-            DoB = input("DoB = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, DoB)
-        elif inputKey == 'Address':
-            Address = input("Address = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Address)
-        elif inputKey == 'Status':
-            Status = input("Status = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Status)
-        elif inputKey == 'msd':
-            msd = input("msd = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, msd)
-        elif inputKey == 'med':
-            med = input("med = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, med)
-        elif inputKey == 'rdate':
-            rdate = input("rdate = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, rdate)
-        elif inputKey == 'Phone':
-            Phone = input("Phone = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Phone)
-        elif inputKey == 'Email':
-            Email = input("Email = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Email)
-        elif inputKey == 'Notes':
-            Notes = input("Notes = ")
-            showWarning = False
-            resultList, tempDict = searchDictionary(tempDict, inputKey, Notes)
-        else:
+        print("Key Options: Mno, Fn, MI, Ln, DoB, Address, Status, msd, med, rdate, Phone, Email, Notes\n")
+        print("Example input: [key]:[value], [key]:[value], ...\n")
+        try:
+            inputSearchOptions = input("Pick a search option: ")
+            split = inputSearchOptions.split(',')
+            for i in range(len(split)):
+                split[i] = split[i].strip()
+            for i in range(len(split)):
+                split[i] = split[i].split(':')
+            for i in range(len(split)):
+                strippedKey.append(split[i][0])
+                strippedKeyValue.append(split[i][1])
+            resultList, tempDict, dumbyValue = searchDictionary(tempDict, strippedKey, strippedKeyValue)
+        except (KeyError,IndexError):
             showWarning = True
             continue
-        
-        searchOptions = ''
-        searchOptions += MnoStr + Mno + "\n"
-        searchOptions += FnStr + Fn + "\n"  
-        searchOptions += MIStr + MI + "\n" 
-        searchOptions += LnStr + Ln + "\n"
-        searchOptions += DoBStr + DoB + "\n"
-        searchOptions += AddressStr + Address + "\n"
-        searchOptions += StatusStr + Status + "\n" 
-        searchOptions += msdStr + msd + "\n"
-        searchOptions += medStr + med + "\n"
-        searchOptions += rdateStr + rdate + "\n"
-        searchOptions += PhoneStr + Phone + "\n"
-        searchOptions += EmailStr + Email + "\n"
-        searchOptions += NotesStr + Notes + "\n"
         
         if len(resultList) > 10:
             printCheckBool = False
             showWarning1 = False
             while not printCheckBool:
+                os.system('clear')
+                print(searchOptions)
                 if showWarning1:
                     print("Warning: Invalid Input\n")
                 printCheck = input("More than 10 members are matching the critera, print? (Y/N): ").upper()
                 if printCheck == 'Y':
                     tabulatedResults = tabulate(resultList, headers=globals()['key'])
                     if globals()['deleteMember']:
-                        firstName, lastName = removeMember(tempDict, searchOptions, tabulatedResults)
+                        firstName, lastName = removeMember(tempDict, tabulatedResults)
                         globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName
                         Manage_members()
                     if globals()['upgradeDowngrade']:
-                        firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
+                        firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, tabulatedResults)
                         globals()['statusUpdated'] = firstName + " " + lastName + " Status changed to " + statusChange
                         Manage_members()
-                    if globals()['modifyMember']:
-                        firstName, lastName, keyChange, valueChange = modifyMember(tempDict, searchOptions, tabulatedResults)
+                    if globals()['modifyMemberBool']:
+                        firstName, lastName, keyChange, valueChange = modifyMember(tempDict, tabulatedResults)
                         globals()['statusUpdated'] = firstName + " " + lastName +  " " + keyChange + "changed to " + valueChange
                         Manage_members()
                     else:
-                        showResults = True
-                        printCheckBool = True
-                        showWarning = False
+                        globals()['statusUpdated'] = "Search Results:\n" + tabulatedResults + "\n"
+                        Manage_members()
                 if printCheck == 'N':
                     searchMembers(globals()['memberDict'])
                 else:
-                    showWarning = True
+                    showWarning1 = True
                     continue
         else:
             tabulatedResults = tabulate(resultList, headers=globals()['key'])
             if globals()['deleteMember']:
-                removeMember(tempDict, searchOptions, tabulatedResults)
+                removeMember(tempDict, tabulatedResults)
                 globals()['statusUpdated'] = "Deleted member" + firstName + " " + lastName
                 Manage_members()
             if globals()['upgradeDowngrade']:
-                firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, searchOptions, tabulatedResults)
+                firstName, lastName, statusChange = upgradeDowngradeFunc(tempDict, tabulatedResults)
                 globals()['statusUpdated'] = "Deleted member " + firstName + " " + lastName + " Status changed to " + statusChange
                 Manage_members()
-            if globals()['modifyMember']:
-                firstName, lastName, keyChange, valueChange = modifyMember(tempDict, searchOptions, tabulatedResults)
+            if globals()['modifyMemberBool']:
+                firstName, lastName, keyChange, valueChange = modifyMember(tempDict, tabulatedResults)
                 globals()['statusUpdated'] = firstName + " " + lastName +  " " + keyChange + "changed to " + valueChange
                 Manage_members()
             else:
-                showResults = True
+                globals()['statusUpdated'] = "Search Results:\n" + tabulatedResults + "\n"
+                Manage_members()
         
 # %% Read CSV and return dictionary with member data
 def readMemberCSV(filePath):
@@ -848,7 +1064,7 @@ def readMemberCSV(filePath):
             tempDict[key[i]] = []
         inFile.close()
         
-    with open('memberdata.csv', mode='r') as inFile:    
+    with open(filePath, mode='r') as inFile:    
         recordReader = csv.DictReader(inFile)
         for record in recordReader:
             for k in tempDict:
@@ -905,12 +1121,29 @@ def greaterThan5Years(renewDate):
     return age
 
 # %% Search through dictionary and return list of lists with member data
-def searchDictionary(dictionary, key, searchVal):
+def searchDictionary(dictionary, keys, searchVals):
     indeces = []
     searchResults = []
+    wholeDictionaryList = []
     searchDict = {}
-    for i in range(len(dictionary[key])):
-        if searchVal in dictionary[key][i]:
+    
+    for key in keys:
+        dumbyValue = dictionary[key]
+    
+    for i in range(len(dictionary['Mno'])):
+        member = []
+        k = 0
+        for key in dictionary:
+            member.append(dictionary[key][i])
+            k += 1
+        wholeDictionaryList.append(member)
+    
+    for i in range(len(wholeDictionaryList)):
+        allValsMatch = []
+        for j in range(len(searchVals)):
+            if searchVals[j] in dictionary[keys[j]][i]:                
+                allValsMatch.append('True')
+        if allValsMatch.count('True') == len(searchVals):
             indeces.append(i)
     for j in indeces:
         memberInfo = []
@@ -928,7 +1161,7 @@ def searchDictionary(dictionary, key, searchVal):
             searchDict[key].append(member[k])
             k += 1
 
-    return searchResults, searchDict
+    return searchResults, searchDict, indeces
 
 # %% Listen for escape key press
 def on_press(key):
