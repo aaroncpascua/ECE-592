@@ -1,6 +1,7 @@
 import names #isntall
 import random
 import datetime
+from datetime import date
 import dateutil #install
 import csv
 import string
@@ -52,10 +53,10 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         #Generate random Membership Start Date and Renewal Date starting from Dec 1 1980
         #If member status is None, Renewal Date is blank
         if (memStatus != 'None'):
-            memStartDate, memRenewalDate = genRandDate(1981,1,1,True)
+            memStartDate, memRenewalDate = genRandDate(1981,1,1,True,False)
             memEndDate = ''
         else:
-            memStartDate, memEndDate = genRandDate(1981,1,1,False)
+            memStartDate, memEndDate = genRandDate(1981,1,1,False,False)
             memRenewalDate = ''
         
         #Generate random 10 digit phone number
@@ -89,6 +90,10 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         memberDict['Email'].append(emailStr)
         memberDict['Notes'].append('')
         
+        percentage = float(counter / no)
+        
+        print(str(percentage) + " Complete")
+        
         counter += 1
         
     #Create CSV and add create header with key[]
@@ -107,7 +112,7 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
     file.close()
 
 # %% Generate a random date
-def genRandDate(year, month, day, currentMember):
+def genRandDate(year, month, day, currentMember, birthday):
     '''
     Generate a random date starting from a given year, month, and day
     if false, return dayStr
@@ -130,7 +135,13 @@ def genRandDate(year, month, day, currentMember):
     endDate = startDate + datetime.timedelta(days=random.randrange(daysBetween2))
     endStr = endDate.strftime("%B %d %Y")
     
-    if not currentMember:
+    if birthday:
+        tooYoung = age(startDate)
+        if tooYoung < 18:
+            genRandDate(1904,2,11,False,True)
+        else:
+            return startStr
+    elif not currentMember:
         return startStr, endStr
     else:
         return startStr, renewalStr
@@ -144,7 +155,11 @@ def genRandPerson(tempDict):
     lname = names.get_last_name()
     
     #Generate random birthdays
-    birthDay, throwAwayValue = genRandDate(1904,2,11,False)
+    hasBirthday = False
+    while not hasBirthday:
+        birthDay = genRandDate(1904,2,11,False,True)
+        if birthDay != None:
+            hasBirthday = True
     
     #Check for duplicate member of the same first name, last name, and birthday
     #If there is a duplicate, genRandPerson()
@@ -152,6 +167,12 @@ def genRandPerson(tempDict):
         fname, lname, birthDay = genRandPerson(tempDict)
     
     return fname, lname, birthDay
+
+# %% Find a member's age
+def age(birthdate):
+    today = date.today()
+    age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+    return age
 
 # %% Find duplicate in memberDict[key] list
 def findDuplicate(tempDict, firstName, lastName, DoB):
@@ -190,3 +211,5 @@ def generateNCSUEmail(tempDict, firstName, middleInitial, lastName, usedEmailCou
             generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter)
         else:
             return emailStr
+
+gen_member_data()
