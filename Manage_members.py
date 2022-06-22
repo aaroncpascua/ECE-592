@@ -2,6 +2,7 @@ import csv
 import os
 import datetime
 from datetime import date
+from dateutil.relativedelta import relativedelta
 from pynput import keyboard #install
 import time
 import re
@@ -9,8 +10,8 @@ from tabulate import tabulate #install
 import argparse
 import pandas as pd
 import textwrap
-import sys
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Global Variables
 memberDict = {}
@@ -959,9 +960,9 @@ def importMembers(tempDict):
             os.system('clear')
             print(importStr)
             print(tabulatedResults + "\n")
-            print("There are " + str(wrongAttributeTotal) + " members with invalid attribute values. These members are not added.")
+            print("There are " + str(len(reduceList)) + " members with invalid attribute values. These members are not added.")
             if warningBool:
-                print("Invalid Input")
+                print("Invalid Input\n")
             addMemberChoice = input('The list above have missing required attributes. Do you want to add anyway? (Y/N): ').upper()
             if addMemberChoice == 'Y':
                 for i in range(len(reduceList)):
@@ -1063,6 +1064,245 @@ def searchMembers(tempDict):
                 globals()['statusUpdated'] = "Search Results:\n" + tabulatedResults + "\n"
                 Manage_members()
         
+# %% Bulk member operation
+def bulkMemberOperation(wholeDict):
+    bulkStr = 'Bulk Operations\n'
+    bulkMenu = "a. Push the renewal date (in integer months)\n" + "b. Change membership status\n" + "c. Remove members\n"
+    criteriaMenu = "Options: \n"
+    criteriaMenu += "Age <min age*> <max age> e.g. Age 25 40 or Age 65\n" 
+    criteriaMenu += "Member <min period in years*> <max period in years> e.g. Member 1 10 or Member 10\n"
+    criteriaMenu += "Status <membership status*> e.g. Basic or Basic Gold\n"
+    criteriaMenu += "You can merge the criteria separted by comma e.g. Age 65, Status Basic Gold\n\n"
+    criteriaMenu += "Note: * means it is a required input\n"
+    
+    loopBool = False
+    warningBool = False
+    while not loopBool:
+        os.system('clear')
+        print(bulkStr)
+        print(bulkMenu)
+        if warningBool:
+            print("Invalid Input\n")
+        menuChoice = input("Enter bulk operation option (a-c): ").lower()
+            
+        if menuChoice == 'a':
+            choiceBool = False
+            warningChoiceBool = False
+            while not choiceBool:
+                os.system('clear')
+                print(bulkStr)
+                print("Push the Renewal Date\n")
+                if warningChoiceBool:
+                    print('Invalid Input\n')
+                choiceValue = input("Enter the renewal date in integer months: ")
+                if choiceValue.isdigit():
+                    bulkDict, bulkList = getBulkMembers(bulkStr, criteriaMenu, wholeDict, menuChoice, True, '')
+                    for j in range(len(bulkDict['Mno'])):
+                        for i in range(len(globals()['memberDict']['rdate'])):
+                            if bulkDict['rdate'][j] == globals()['memberDict']['rdate'][i] and bulkDict['rdate'][j] != '':
+                                renewalDate = datetime.datetime.strptime(globals()['memberDict']['rdate'][i], '%B %d %Y')
+                                newRenewalDate = renewalDate + relativedelta(months=int(choiceValue))
+                                newRenewalDateStr = newRenewalDate.strftime('%B %d %Y')
+                                globals()['memberDict']['rdate'][i] = newRenewalDateStr
+                                break
+                    choiceBool = True
+                else:
+                    warningChoiceBool = True
+            writeCSV(globals()['memberDict'])
+            globals()['statusUpdated'] = "Renewal Date pushed " + choiceValue + " month(s) for " + str(len(bulkDict['Mno'])) + " members"
+            Manage_members()
+                    
+        if menuChoice == 'b':
+            choiceBool = False
+            warningChoiceBool = False
+            statusRegex = re.compile(r'[a-zA-z]+')
+            while not choiceBool:
+                os.system('clear')
+                print(bulkStr)
+                print("Change Membership Status\n")
+                if warningChoiceBool:
+                    print('Invalid Input\n')
+                print("Status options: Basic, Silver, Gold, Platinum\n")
+                choiceValue = input("Enter the new membership status: ").capitalize()
+                if not re.fullmatch(statusRegex, choiceValue):
+                    warningChoiceBool = True
+                    continue
+                if choiceValue not in globals()['status'][:-1]:
+                    warningChoiceBool = True
+                    continue
+                else:
+                    bulkDict, bulkList = getBulkMembers(bulkStr, criteriaMenu, wholeDict, menuChoice, True, '')
+                    for j in range(len(bulkDict['Mno'])):
+                        for i in range(len(globals()['memberDict']['Status'])):
+                            if bulkDict['Status'][j] == globals()['memberDict']['Status'][i]:
+                                globals()['memberDict']['Status'][i] = choiceValue
+                                break
+                    choiceBool = True
+            writeCSV(globals()['memberDict'])
+            globals()['statusUpdated'] = "Membership status changed to " + choiceValue + " for " + str(len(bulkDict['Mno'])) + " members"
+            Manage_members()
+                        
+        if menuChoice == 'c':
+            choiceBool = False
+            warningChoiceBool = False
+            statusRegex = re.compile(r'[a-zA-z]+')
+            while not choiceBool:
+                os.system('clear')
+                print(bulkStr)
+                print("Remove members\n")
+                bulkDict, bulkList = getBulkMembers(bulkStr, criteriaMenu, wholeDict, menuChoice, True, '')
+                for j in range(len(bulkDict['Mno'])):
+                    for i in range(len(globals()['memberDict']['Mno'])):
+                        if bulkDict['Mno'][j] == globals()['memberDict']['Mno'][i]:
+                            globals()['memberDict']['med'][i] = date.today().strftime('%B %d %Y')
+                            globals()['memberDict']['rdate'][i] = ''
+                            break
+                choiceBool = True
+            writeCSV(globals()['memberDict'])
+            globals()['statusUpdated'] = str(len(bulkDict['Mno'])) + " members removed"
+            Manage_members()
+        
+        else:
+            warningBool = True
+        
+# %% Get list of Mnos that match all bulk member criteria
+def getBulkMembers(bulkStr, criteriaMenu, wholeDict, menuChoice, needInput, criteriaChoice):
+    criteriaListOptions = ['Age', 'Member', 'Status']
+    MnoList = []
+    finalMno = []
+    
+    if menuChoice == 'a':
+        menu = "Push Renewal Date"
+    if menuChoice == 'b':
+        menu = "Change Membership Status"
+    if menuChoice == 'c':
+        menu = "Remove members"
+    
+    criteriaLoop = False
+    criteriaWarning = False
+    while not criteriaLoop:
+        criteriaList = []
+        criteriaUsed = 0
+        os.system('clear')
+        print(bulkStr)
+        print(criteriaMenu)
+        if criteriaWarning:
+            print("Invalid input\n")
+        criteriaWarning = False
+        if needInput:
+            criteriaChoice = input("Enter " + menu + " criteria: ")
+        print("Processing...")
+        splitComma = criteriaChoice.split(',')
+        for i in range(len(splitComma)): 
+            criteriaList.append(splitComma[i].strip().capitalize().split(' '))
+        #Check if input is valid
+        for criteria in criteriaList:
+            if criteria[0] not in criteriaListOptions:
+                criteriaWarning = True
+                        
+        #Continue if a valid inputs are given
+        if not criteriaWarning:
+            for criteria in criteriaList:
+                if criteria[0] == "Age":
+                    criteriaUsed += 1
+                    if len(criteria[1:]) > 2:
+                        criteriaWarning = True
+                        continue
+                    else:
+                        noSecondVal = False
+                        try:
+                            minAge = int(criteria[1])
+                            try:
+                                maxAge = int(criteria[2])
+                            except IndexError:
+                                noSecondVal = True
+                        except ValueError:
+                            criteriaWarning = True
+                            continue
+                        for i in range(len(wholeDict['DoB'])):
+                            memberAge = age(datetime.datetime.strptime(wholeDict['DoB'][i], '%B %d %Y'))
+                            if noSecondVal:
+                                if memberAge >= minAge:
+                                    MnoList.append(wholeDict['Mno'][i])
+                            else:
+                                if memberAge >= minAge and memberAge <= maxAge:
+                                    MnoList.append(wholeDict['Mno'][i])
+            
+                elif criteria[0] == "Status":
+                    criteriaUsed += 1
+                    for c in criteria[1:]:
+                        capitalizedCriteria = c.capitalize()
+                        if criteria[1:].count(capitalizedCriteria) > 1:
+                            criteriaWarning = True
+                            continue
+                        if capitalizedCriteria not in globals()['status']:
+                            criteriaWarning = True
+                            continue
+                        else:
+                            for i in range(len(wholeDict['Status'])):
+                                if capitalizedCriteria == wholeDict['Status'][i]:
+                                    MnoList.append(wholeDict['Mno'][i])
+                
+                elif criteria[0] == "Member":
+                    criteriaUsed += 1
+                    if len(criteria[1:]) > 2:
+                        criteriaWarning = True
+                        continue
+                    else:
+                        noSecondVal = False
+                        try:
+                            minMembershipAge = int(criteria[1])
+                            try:
+                                maxMembershipAge = int(criteria[2])
+                            except IndexError:
+                                noSecondVal = True
+                        except ValueError:
+                            criteriaWarning = True
+                            continue
+                        for i in range(len(wholeDict['Mno'])):
+                            memberbershipAge = age(datetime.datetime.strptime(wholeDict['msd'][i], '%B %d %Y'))
+                            if noSecondVal:
+                                if memberbershipAge >= minMembershipAge and wholeDict['Status'][i] in globals()['status'][:-1]:
+                                    MnoList.append(wholeDict['Mno'][i])
+                            else:
+                                if memberAge >= minMembershipAge and memberAge <= maxMembershipAge and wholeDict['Status'][i] in globals()['status'][:-1]:
+                                    MnoList.append(wholeDict['Mno'][i])
+                                    
+            criteriaLoop = True
+
+    for mno in wholeDict['Mno']:
+        if MnoList.count(mno) == criteriaUsed:
+            finalMno.append(mno)
+    
+    #Create list of membership data from bulk operation search
+    wholeMemberList = []
+    tempDict = wholeDict
+    for i in range(len(finalMno)):
+        for j in range(len(tempDict['Mno'])):
+            member = []
+            appendMember = False
+            if finalMno[i] == tempDict['Mno'][j]:
+                for key in tempDict:
+                    appendMember = True
+                    member.append(tempDict[key][j])
+                if appendMember:
+                    wholeMemberList.append(member)
+                break
+        
+    #Create dictionary from wholeMemberList
+    wholeListDict = {}
+    for i in range(0, len(globals()['key'])):
+        wholeListDict[globals()['key'][i]] = []
+        
+    for i in range(len(wholeMemberList)):
+        member = wholeMemberList[i]
+        k = 0
+        for key in wholeListDict:
+            wholeListDict[key].append(member[k])
+            k += 1
+            
+    return wholeListDict, wholeMemberList
+        
 # %% Read CSV and return dictionary with member data
 def readMemberCSV(filePath):
     tempDict = {}
@@ -1151,7 +1391,7 @@ def searchDictionary(dictionary, keys, searchVals):
     for i in range(len(wholeDictionaryList)):
         allValsMatch = []
         for j in range(len(searchVals)):
-            if searchVals[j] in dictionary[keys[j]][i]:                
+            if searchVals[j].capitalize() in dictionary[keys[j]][i]:                
                 allValsMatch.append('True')
         if allValsMatch.count('True') == len(searchVals):
             indeces.append(i)
@@ -1173,13 +1413,10 @@ def searchDictionary(dictionary, keys, searchVals):
 
     return searchResults, searchDict, indeces
 
-def bulkMemberOperation(tempDict):
-    print('fuck you')
-
 # %% Make some graphs based on a mode
 def graphMembers(mode):
     tempDict = readMemberCSV('memberdata.csv')
-    if mode.upper() == 'Status':
+    if mode.capitalize() == 'Status':
         basicList, basicDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Basic'])
         silverList, silverDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Silver'])
         goldList, goldDict, dumbyValue = searchDictionary(tempDict, ['Status'], ['Gold'])
@@ -1192,7 +1429,6 @@ def graphMembers(mode):
         numPlatinum = len(platinumList)
         numNone = len(noneList)
         
-        fig = plt.figure(figsize = (10,5))
         xLabels = ['Basic', 'Silver', 'Gold', 'Platinum', 'None']
         yValues = [numBasic, numSilver, numGold, numPlatinum, numNone]
         plt.bar(xLabels, yValues, color='maroon',width=0.4)
@@ -1200,12 +1436,73 @@ def graphMembers(mode):
         plt.xlabel('Status')
         plt.ylabel('Number of members')
         plt.show()
-        fig.show()
     
-    if mode.upper() == 'Age':
-        print('fuck you')
+    if mode.capitalize() == 'Age':
+        ageDict1825, ageList1825 = getBulkMembers('', '', tempDict, '', False, "Age 18 25, Status Basic Silver Gold Platinum")
+        ageDict2535, ageList2535 = getBulkMembers('', '', tempDict, '', False, "Age 25 35, Status Basic Silver Gold Platinum")
+        ageDict3550, ageList3550 = getBulkMembers('', '', tempDict, '', False, "Age 35 50, Status Basic Silver Gold Platinum")
+        ageDict5065, ageList5065 = getBulkMembers('', '', tempDict, '', False, "Age 50 65, Status Basic Silver Gold Platinum")
+        ageDict65Up, ageList65Up = getBulkMembers('', '', tempDict, '', False, "Age 65, Status Basic Silver Gold Platinum")
         
-    globals()['statusUpdated'] = "Generated " + mode.upper() + " plot"
+        list1825 = len(ageList1825)
+        list2535 = len(ageList2535)
+        list3550 = len(ageList3550)
+        list5065 = len(ageList5065)
+        list65Up = len(ageList65Up)
+        
+        xLabels = ['18-25', '25-35', '35-50', '50-65', '>65']
+        yValues = [list1825, list2535, list3550, list5065, list65Up]
+        plt.bar(xLabels, yValues, color='maroon',width=0.4)
+        plt.title('Age Distribution of Active Members')
+        plt.xlabel('Age Range')
+        plt.ylabel('Number of members')
+        plt.show()
+    
+    if mode.capitalize() == 'Year':
+        xLabels = []
+        year = 1981
+        for i in range(39):
+            xLabels.append(str(year))
+            year += 1
+
+        yValuesNew = []
+        yValuesOld = []
+        for j in range(2):
+            year = 1981
+            for i in range(39):
+                counter = 0
+                if j == 0:
+                    for k in range(len(tempDict['msd'])):
+                        splitDate = tempDict['msd'][k].split(' ')
+                        if splitDate[2] == str(year) and tempDict['med'][k] == '':
+                            counter += 1
+                    yValuesNew.append(counter)
+                if j == 1:
+                    for fullDate in tempDict['med']:
+                        splitDate = fullDate.split(' ')
+                        try:
+                            if splitDate[2] == str(year):
+                                counter += 1
+                        except IndexError:
+                            pass
+                    yValuesOld.append(counter)
+                year += 1
+        
+        xAxis = np.arange(len(xLabels))
+        
+        plt.bar(xAxis-0.2, yValuesNew, width=0.4, color='green', label='New Members Added')
+        plt.bar(xAxis+0.2, yValuesOld, width=0.4, color='maroon', label='Members Left')
+        plt.xticks(xAxis, xLabels)
+        plt.title('New Members Added/Members Left vs Year')
+        plt.xlabel('Year')
+        plt.ylabel('Number of members')
+        plt.legend()
+        plt.show()
+    
+    else:
+        globals()['statusUpdated'] = "Cannot generate plot. " + mode.capitalize() + " does not exist"
+        
+    globals()['statusUpdated'] = "Generated " + mode.capitalize() + " plot"
     Manage_members()
         
 # %% Listen for escape key press
@@ -1230,14 +1527,15 @@ def main():
                 Age:This will plot bar graph of number of active members in following age category, 18-25, 25-35, 35-50, 50-65, >65 + 
                 Year:Bar graph of number of new members added and number of members left vs year {1981 to 2019}",action="store_true'''))
     parser.add_argument("-graph", "--graph", action='store', type=str, help="Graph member data using one of the following modes: Status, Age, Year")
-    if len(sys.argv) == 1:
+    args = parser.parse_args()
+    try:
+        graphMembers(args.graph)
+    except AttributeError:
         with keyboard.Listener(on_press=on_press) as listener:
             while break_program == False:
                 Manage_members()
                 time.sleep(1)
             listener.join()
-    argumentStrings = sys.argv
-    graphMembers(argumentStrings[2])
     
            
 if __name__ == "__main__":
