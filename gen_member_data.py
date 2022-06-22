@@ -3,9 +3,13 @@ import random
 import datetime
 from datetime import date
 import dateutil #install
+from dateutil.relativedelta import relativedelta
 import csv
 import string
 import random_address #install
+import argparse
+import sys
+import os
 
 #Global Variables
 key = ['Mno', 'Fn', 'MI', 'Ln', 'DoB', 'Address', 'Status', 'msd', 'med', 'rdate', 'Phone', 'Email', 'Notes']
@@ -13,7 +17,7 @@ status = ['Basic', 'Silver', 'Gold', 'Platinum', 'None']
 memberDict = {}
 
 # %% Generate Member Data
-def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
+def gen_member_data(no:int = 1000, fname:str = 'memberdata.csv'):
     """
     Inputs are -no <number of members> and -fname <filename>
     -no is number of random members to be generated in -fname
@@ -90,12 +94,15 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         memberDict['Email'].append(emailStr)
         memberDict['Notes'].append('')
         
-        percentage = float(counter / no)
+        percentage = float((counter / no)*100)
         
-        print(str(percentage) + " Complete")
+        os.system('clear')
+        print("%.1f"%percentage + " Complete")
         
         counter += 1
-        
+       
+    os.system('clear')
+    print("100% Complete")
     #Create CSV and add create header with key[]
     file = open(fname, 'w', newline='')
     writer = csv.writer(file, delimiter=',', quotechar='"')
@@ -110,6 +117,9 @@ def gen_member_data(fname:str = 'memberdata.csv', no:int = 1000):
         
         writerCounter += 1
     file.close()
+    
+    os.system('clear')
+    print(str(no) + " members generated in " + fname + "\n")
 
 # %% Generate a random date
 def genRandDate(year, month, day, currentMember, birthday):
@@ -128,7 +138,7 @@ def genRandDate(year, month, day, currentMember, birthday):
     daysBetween1 = timeBetween1.days
     startDate = originDate + datetime.timedelta(days=random.randrange(daysBetween1))
     startStr = startDate.strftime("%B %d %Y")
-    getRenewal = startDate + dateutil.relativedelta.relativedelta(years=5)
+    getRenewal = startDate + relativedelta(years=5)
     renewalStr = getRenewal.strftime("%B %d %Y")
     timeBetween2 = todayDate - startDate
     daysBetween2 = timeBetween2.days
@@ -211,5 +221,14 @@ def generateNCSUEmail(tempDict, firstName, middleInitial, lastName, usedEmailCou
             generateNCSUEmail(firstName, middleInitial, lastName, usedEmailCounter)
         else:
             return emailStr
-
-gen_member_data()
+ 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--no', action='store', type=int, help="number of members to generate", default=1000)
+    parser.add_argument('-f', '--fname', action='store', type=str, help="name of file", default='memberdata.csv')
+    args = parser.parse_args()
+    
+    gen_member_data(args.no, args.fname)
+       
+if __name__ == "__main__":
+    main()
