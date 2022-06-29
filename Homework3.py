@@ -94,44 +94,38 @@ def detectstopsign(filename:str):
     Red square shows length of stop sign in pixels
     """
 
-    #Check if file exists
+    # Check if file exists
     fileExists = exists(filename)
     if not fileExists:
         print("File does not exist")
         return -1
 
-    #Read image
+    # Read image, grayscale, Otsu's threshold
     image = cv.imread(filename)
-    hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
-    plt.imshow(hsv)
-    plt.show()
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    threshold = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
 
-    lower_red = np.array([0,140,100])
-    upper_red = np.array([180,260,245])
+    # Find contours and detect octagon
+    contours = cv.findContours(threshold, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contours = contours[0] if len(contours) == 2 else contours[1]
+    for c in contours:
+        # Compute perimeter of contour and perform contour approximation
+        shape = ""
+        perimeter = cv.arcLength(c, True)
+        approx = cv.approxPolyDP(c, 0.04*perimeter, True)
 
-    red_mask = cv.inRange(hsv, lower_red, upper_red)
-    cv.imshow('red mask', red_mask)
+        if len(approx) == 8:
+            shape = "octagon"
 
-    binary_image = cv.threshold(red_mask, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)[1]
-    
-    kernel = np.ones((3,3), np.int8)
+        # Find centroid and label shape name
+        M = cv.moments(c)
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        cv.putText(image, shape, (cX - 20, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (36,255,12), 2)
 
-    opening = cv.morphologyEx(binary_image, cv.MORPH_OPEN, kernel, iterations=1)
-    cv.imshow("opening", opening)
-    # se = cv.getStructuringElement(cv.MORPH_RECT, (8,8))
-    # bg=cv.morphologyEx(image, cv.MORPH_DILATE, se)
-    # out_gray=cv.divide(image, bg, scale=255)
-    # out_binary=cv.threshold(out_gray, 0, 255, cv.THRESH_OTSU )[1]
-
-    # #cv.imshow("open image", open_image)
-    # cv.imshow('out gray', out_gray)
-    # cv.imshow('out binary', out_binary)
-
-    #Blur using n * n kernel
-    #blurred_image = cv.blur(brighter_image, (26,26))
-
-    cv.waitKey(0)
+    cv.imshow('thresh', threshold)
+    cv.imshow('image', image)
+    cv.waitKey()
     cv.destroyAllWindows()
 
-#detectstopsignc('Stop2.JPG')
-detectcircles('ColorBlobs.JPG')
+detectstopsign('Stop3.jpg')
