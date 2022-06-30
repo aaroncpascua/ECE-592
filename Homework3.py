@@ -1,10 +1,14 @@
 import cv2 as cv
 from cv2 import resize
 from cv2 import COLOR_BGR2BGRA
+from cv2 import DescriptorMatcher
+from cv2 import RETR_EXTERNAL
+from cv2 import CHAIN_APPROX_NONE
 import cvzone
 import numpy as np
 from os.path import exists
 import matplotlib.pyplot as plt
+import math
 
 def detectcircles(filename:str):
     """
@@ -102,30 +106,96 @@ def detectstopsign(filename:str):
 
     # Read image, grayscale, Otsu's threshold
     image = cv.imread(filename)
-    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    threshold = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
 
-    # Find contours and detect octagon
-    contours = cv.findContours(threshold, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    contours = contours[0] if len(contours) == 2 else contours[1]
+    # Blur
+    image_blur = cv.GaussianBlur(image, (7,7), 1)
+
+    # Gray out image
+    image_gray = cv.cvtColor(image_blur, cv.COLOR_BGR2GRAY)
+
+    # Use canny edge detection
+    image_canny = cv.Canny(image_gray, 150, 400)
+    
+    # Dilate canny
+    kernel = np.ones((1,1))
+    image_dilation = cv.dilate(image_canny, kernel, iterations=1)
+
+    # Find contours, store locations of contour corners, create box around contour
+    contours, hierarchy = cv.findContours(image_dilation, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    contoursimage = image_dilation.copy()
+    contourTotalList = []
     for c in contours:
-        # Compute perimeter of contour and perform contour approximation
-        shape = ""
-        perimeter = cv.arcLength(c, True)
-        approx = cv.approxPolyDP(c, 0.04*perimeter, True)
+        contourList = []
+        approx = cv.approxPolyDP(c, 0.04*cv.arcLength(c, True), True)
+        area = cv.contourArea(c)
+        if area > 100 and len(approx) == 8:
+            cv.drawContours(contoursimage, c, -1, (255,0,255), 7)
 
-        if len(approx) == 8:
-            shape = "octagon"
+            n = approx.ravel()
+            i = 0
+            for j in n:
+                contourLocations =[]
+                if(i%2==0):
+                    x = n[i]
+                    y = n[i + 1]
+                    contourLocations.append(x)
+                    contourLocations.append(y)
+                    contourList.append(contourLocations)
+                i += 1
+            contourTotalList.append(np.array(contourList))
 
-        # Find centroid and label shape name
-        M = cv.moments(c)
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        cv.putText(image, shape, (cX - 20, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (36,255,12), 2)
+            (x, y, w, h) = cv.boundingRect(c)
+            contourList.append(contourLocations)
+            cv.rectangle(image, (x,y), (x+w,y+h), (0,0,255), 2)
+            pixelLengthText = "{0} px".format(int(w*(math.sqrt(2) -1)))
+            cv.putText(image, pixelLengthText, (x,y), cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2, 2)
 
-    cv.imshow('thresh', threshold)
+    # Apply mask to isolate red
+    lower_red = np.array([0,5,95])
+    upper_red = np.array([90,80,245])
+    red_mask = cv.inRange(image, lower_red, upper_red)
+
+    # If the first try failed, try the same method, but using only red mask layer
+    if len(contourTotalList) == 0:
+        result = cv.morphologyEx(red_mask, cv.MORPH_OPEN, np.ones((2,2),np.uint8), iterations=1)
+        image_blur = cv.GaussianBlur(result, (7,7), 1)
+        image_canny = cv.Canny(image_blur, 150, 400)
+        kernel = np.ones((2,2))
+        image_dilation = cv.dilate(image_canny, kernel, iterations=1)
+        contours, hierarchy = cv.findContours(image_dilation, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        for c in contours:
+            contourList = []
+            approx = cv.approxPolyDP(c, 0.04*cv.arcLength(c, True), True)
+            area = cv.contourArea(c)
+            if area > 100 and len(approx) == 8:
+                n = approx.ravel()
+                i = 0
+                for j in n:
+                    contourLocations =[]
+                    if(i%2==0):
+                        x = n[i]
+                        y = n[i + 1]
+                        contourLocations.append(x)
+                        contourLocations.append(y)
+                        contourList.append(contourLocations)
+                    i += 1
+                contourTotalList.append(np.array(contourList))
+
+                (x, y, w, h) = cv.boundingRect(c)
+                contourList.append(contourLocations)
+                cv.rectangle(image, (x,y), (x+w,y+h), (0,0,255), 2)
+                pixelLengthText = "{0} px".format(int(w*(math.sqrt(2) -1)))
+                cv.putText(image, pixelLengthText, (x,y), cv.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2, 2)
+
+    # Use found contour locations to remove any blobs outside of stop sign
+    stencil = np.zeros(red_mask.shape).astype(red_mask.dtype)
+    color = [255, 255, 255]
+    cv.fillPoly(stencil, contourTotalList, color) 
+    result = cv.bitwise_and(red_mask, stencil)
     cv.imshow('image', image)
+    cv.imshow('result', result)
+
     cv.waitKey()
     cv.destroyAllWindows()
 
-detectstopsign('Stop3.jpg')
+detectstopsign('Stop1.png')
