@@ -197,5 +197,3 @@ def detectstopsign(filename:str):
 
     cv.waitKey()
     cv.destroyAllWindows()
-
-detectstopsign('Stop1.png')
