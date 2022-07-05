@@ -35,14 +35,6 @@ gpio.setup(LEDs, gpio.OUT, initial=gpio.LOW)
 
 reply = ""
 
-red_led_bool_list = []
-red_led_bool_counter = 0
-green_led_bool_list = []
-green_led_bool_counter = 0
-red_loop_bool = True
-green_loop_bool = True
-red_led_bool = True
-green_led_bool = True
 red_threads = []
 red_threads_counter = 0
 green_threads = []
@@ -76,7 +68,7 @@ def set_led(led, t, sw):
                 time.sleep(t)
         logging.debug("exit red loop")
 
-# function to turn off LED once button is released
+# function to turn off red LED once button is released
 def red_led_off(channel):
     logging.debug("turning off " + globals()["red_threads"][globals()["red_threads_counter"]].getName())
     gpio.output(RED_LED, False)
@@ -88,6 +80,7 @@ def red_led_off(channel):
     globals()["red_threads"].append(new_red_thread)
     globals()["red_threads"][globals()["red_threads_counter"]].start()
     
+# function to turn off green LED once button is released
 def green_led_off(channel):
     logging.debug("turning off " + globals()["green_threads"][globals()["green_threads_counter"]].getName())
     gpio.output(GREEN_LED, False)
@@ -135,9 +128,6 @@ def clientthread(conn):
     #infinite loop so that function do not terminate and thread do not end.
     while client_connect:
          
-        #Receiving from client
-        #data = conn.recv(1024)
-        #print(data)
         try:
             if (gpio.input(SW1) == gpio.LOW):
                 logging.debug("SW1 Pressed")
@@ -170,28 +160,19 @@ def clientthread(conn):
     logging.debug("closing conn")
     
 SW1_ON_THREAD = threading.Thread(target=set_led, args=(RED_LED, 1, SW1))
-#SW1_OFF_THREAD = threading.Thread(target=led_off, args=(RED_LED, 2, SW1))
 SW2_ON_THREAD = threading.Thread(target=set_led, args=(GREEN_LED, 0.5, SW2))
-#SW2_OFF_THREAD = threading.Thread(target=led_off, args=(GREEN_LED, 1, SW2))
 gpio.add_event_detect(SW1, gpio.RISING, callback=red_led_off, bouncetime=100)
 gpio.add_event_detect(SW2, gpio.RISING, callback=green_led_off, bouncetime=100)
 
 # set on/off functions to daemon so in the even the pi is shut off in the middle of an LED blink
 SW1_ON_THREAD.setDaemon(True)
-#SW1_OFF_THREAD.setDaemon(True)
 SW2_ON_THREAD.setDaemon(True)
-#SW2_OFF_THREAD.setDaemon(True)
 
+# start a list of threads to start/stop
 globals()["red_threads"].append(SW1_ON_THREAD)
 globals()["green_threads"].append(SW2_ON_THREAD)
-
 globals()["red_threads"][globals()["red_threads_counter"]].start()
 globals()["green_threads"][globals()["green_threads_counter"]].start()
-
-#SW1_ON_THREAD.start()
-#SW1_OFF_THREAD.start()
-#SW2_ON_THREAD.start()
-#SW2_OFF_THREAD.start()
 
 SW3_EVENT = gpio.add_event_detect(SW3, gpio.BOTH, callback=turn_off_pi, bouncetime=100)
 
@@ -211,7 +192,6 @@ try:
     s1.close()
     s.bind((ip_address, PORT))
     print("Host IP: " + ip_address + ", " + "Port: " + str(PORT))
-    #s.bind(("192.168.1.229", PORT))
 except (socket.error, OSError) as msg:
     print('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
     sys.exit()
