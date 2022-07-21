@@ -8,7 +8,6 @@ from gpiozero import MCP3008
 import colorsys
 import os
 import csv
-import_thread
 
 logging.basicConfig(level=logging.DEBUG,format='%(thread)d (%(threadName)-12s) %(message)s',)
 
@@ -476,48 +475,6 @@ def print_data():
         output_str += " | Percentage turned: " + str(pot_final) + "% | RGB:" + str(rgb_red) + "-" + str(rgb_green) + "-" + str(rgb_blue)
         print(output_str)
 
-def server():
-    PORT = 8888 # Arbitrary non-privileged port
- 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print('Socket created')
-     
-    #Bind socket to local host and port
-    try:
-        s1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s1.connect(("8.8.8.8", 80))
-        ip_address = s1.getsockname()[0]
-        logging.debug("Retrieving IPv4 Address...")
-        s1.close()
-        s.bind((ip_address, PORT))
-        logging.debug("Host IP: " + ip_address + ", " + "Port: " + str(PORT))
-    except (socket.error, OSError) as msg:
-        logging.debug('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
-        #sys.exit()
-         
-    logging.debug('Socket bind complete')
-     
-    #Start listening on socket
-    s.listen(10)
-    logging.debug('Socket now listening')
-
-    search_clients = True
-    #now keep talking with the client
-    while search_clients:
-        try:
-            #wait to accept a connection - blocking call
-            conn, addr = s.accept()
-            logging.debug('Connected with ' + addr[0] + ':' + str(addr[1]))
-             
-            #start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
-            #start_new_thread(clientthread ,(conn,))
-            _thread.start_new_thread(clientthread, (conn,))
-        except KeyboardInterrupt:
-            logging.debug("Closing Server...")
-            s.close()
-            return
-
 if __name__ == '__main__':
     try:
         # set default led status
@@ -530,10 +487,6 @@ if __name__ == '__main__':
         
         #intialize gpio events
         gpio.add_event_detect(GPIO_BUTTON, gpio.BOTH, callback=button_detect, bouncetime=200)
-        
-        #start server thread
-        server_thread = threading.Thread(target=server)
-        server_thread.start()
         
         #initialize ultrasonic and buzzer threads
         ultrasonic_thread = threading.Thread(target=ultrasonic)
