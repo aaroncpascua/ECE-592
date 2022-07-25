@@ -74,6 +74,9 @@ rgb_red = 0
 rgb_green = 0
 rgb_blue = 0
 display_str = ""
+RECORDING_STARTED = False
+DISTANCE_CHANGED = False
+temp_data = []
 
 def wait_user():
     # gives user 2 seconds to release button once ORD starts
@@ -213,27 +216,28 @@ def button_detect(channel):
     return
 
 def set_led():
+    global RECORDING_STARTED
     # set the LED and start mode loops
     #logging.debug("starting led control")
     
     # Monitor System
-    if MODE_MS.is_set():        
+    if MODE_MS.is_set():
         while MODE_MS.is_set():
             gpio.output(GPIO_LED, False)
             
     # Record Data and Monitor
     if MODE_RDM.is_set():
-        record_thread = threading.Thread(target=record_data)
-        record_thread.start()
-        
+        if not RECORDING_STARTED:
+            record_thread = threading.Thread(target=record_data)
+            record_thread.start()
         while MODE_RDM.is_set():
             gpio.output(GPIO_LED, True)
             
     # Only Record Data
     if MODE_ORD.is_set():
-        record_thread = threading.Thread(target=record_data)
-        record_thread.start()
-        
+        if not RECORDING_STARTED:
+            record_thread = threading.Thread(target=record_data)
+            record_thread.start()
         while MODE_ORD.is_set():
             gpio.output(GPIO_LED, True)
             time.sleep(0.5)
@@ -252,6 +256,8 @@ def ultrasonic():
     global buzzer_stopped
     global beep_active
     global stop_active
+    global DISTANCE_CHANGED
+    global RECORDING_STARTED
     
     buzzer = gpio.PWM(GPIO_BUZZER, 0.1) # default buzzer to not play anything
     buzzer.start(10)
@@ -419,14 +425,32 @@ def RGB_LED(R, G, B):
     green.ChangeDutyCycle(G)
     blue.ChangeDutyCycle(B)
 
+def store_data():
+    global distance
+    global frequency
+    global pot_final
+    global rgb_red
+    global rgb_green
+    global rgb_blue
+    global temp_data 
+    
+    timestamp = datetime.utcnow().strftime('%m-%d-%Y %H:%M:%S.%f')[:-3]
+    rgb_value = str(rgb_red) + "-" + str(rgb_green) + "-" + str(rgb_blue)
+    values = [timestamp, str(distance), str(frequency), str(pot_final), rgb_value]
+    temp_data.append(values)
+    return
+
 def record_data():
     global distance
     global frequency
     global pot_final
     global rgb_red
     global rgb_green
-    global rgb_blue 
+    global rgb_blue
+    global RECORDING_STARTED
+    global temp_data
     
+    RECORDING_STARTED = True
     print("Recording data...")
     
     # create file, check if file exists, if file exists, increment name by 1
@@ -443,22 +467,29 @@ def record_data():
     file = open(file_path, 'w', newline='')
     writer = csv.writer(file, delimiter=',', quotechar='"')
     writer.writerow(headers)
+    file.flush()
+    file.close()
     
-    temp_val = distance # first value read
+    temp_data = []
     while MODE_RDM.is_set() or MODE_ORD.is_set():
-        time.sleep(0.001) # give small time delay to not take up memory
+        time.sleep(0.1) # fastest sampling rate
         
         # if distance changes (most frequently changed variable), add row to data file
-        if temp_val != distance:
-            timestamp = datetime.utcnow().strftime('%m-%d-%Y %H:%M:%S.%f')[:-3]
-            rgb_value = str(rgb_red) + "-" + str(rgb_green) + "-" + str(rgb_blue)
-            values = [timestamp, str(distance), str(frequency), str(pot_final), rgb_value]
-            writer.writerow(values)
-            
-        temp_val = distance # store previous data point
-        
+        timestamp = datetime.utcnow().strftime('%m-%d-%Y %H:%M:%S.%f')[:-3]
+        rgb_value = str(rgb_red) + "-" + str(rgb_green) + "-" + str(rgb_blue)
+        values = [timestamp, str(distance), str(frequency), str(pot_final), rgb_value]
+        temp_data.append(values) 
+          
+    file = open(file_path, 'a', newline='')
+    writer = csv.writer(file, delimiter=',', quotechar='"')
+    writer.writerows(temp_data)
+    file.flush()
     file.close()
-    print("stopped recording...")
+        
+    #RECORDING_STARTED = False
+    RECORDING_STARTED = False # reset data record flag
+    temp_data = [] # reset data storage
+    print("Stopped recording...")
 
 def print_data():
     global ELECTRONICS_ON
@@ -500,13 +531,13 @@ if __name__ == '__main__':
         print_thread = threading.Thread(target=print_data, daemon=True)
         print_thread.start()
         
-        while True:
+        while ELECTRONICS_ON:
             time.sleep(0.001) # small delay to not take up too much memory
             
     except KeyboardInterrupt:
-        # close program gracefully
+        # close program gracefully            
         ELECTRONICS_ON = False
-        
+                
         MODE_MS.clear()
         MODE_RDM.clear()
         MODE_ORD.clear()
@@ -515,12 +546,11 @@ if __name__ == '__main__':
         green.stop()
         blue.stop()
         
+        print_thread.join()
         led_thread.join()
-        server_thread.join()
         ultrasonic_thread.join()
         pot_thread.join()
-        print_thread.join()
-
+        
         print("Stopping MonitoringApp.py")
         
         pot.close()
