@@ -126,13 +126,13 @@ def plot_data(files):
                 for data in data_dict[key]:
                     color = data.split('-')
                     if color[0] == "None":
-                         red_data.append(None)
+                         red_data.append(np.nan)
 
                     if color[1] == "None":
-                        green_data.append(None)
+                        green_data.append(np.nan)
 
                     if color[2] == "None":
-                        blue_data.append(None)
+                        blue_data.append(np.nan)
 
                     else:
                         red_data.append(int(color[0]))
@@ -147,7 +147,7 @@ def plot_data(files):
                 temp_freq = []
                 for data in data_dict[key]:
                     if data == "None":
-                        temp_freq.append(None)
+                        temp_freq.append(np.nan)
 
                     else:
                         temp_freq.append(float(data))
@@ -174,18 +174,17 @@ def plot_data(files):
         for k in keys[1:]: # couldn't think of a better way to skip the first key (Timestamp)
             x = np.array(data_to_plot['Timestamp'])
             y = np.array(data_to_plot[k])
-
             # place the plots in specific locations in main plot
             if k == 'Distance':
                 ax = fig.add_subplot(231)
                 ax.set_ylabel("Distance (cm)")
-            elif k == 'Frequency':
+            if k == 'Frequency':
                 ax = fig.add_subplot(232)
                 ax.set_ylabel("Frequency (Hz)")
-            elif k == 'Potentiometer':
+            if k == 'Potentiometer':
                 ax = fig.add_subplot(233)
                 ax.set_ylabel("Potentiometer %")
-            elif k == 'Red' or k == 'Green' or k == 'Blue':
+            if k == 'Red' or k == 'Green' or k == 'Blue':
                 ax = fig.add_subplot(rgb_fig_num)
                 ax.set_ylabel(k + " value")
                 rgb_fig_num += 1
@@ -199,24 +198,53 @@ def plot_data(files):
             else:
                 ax.set_title(k + " vs time")
 
-            # create y limits, if only 0s, then set the y limits to -1, 1
+            # create y limits based on the data's smallest/largest value -/+ a scalar of 10 to fit all data
             try:
                 smallest_value = sorted(data_to_plot[k])[0]
                 if smallest_value == 0 or smallest_value == 0.0:
                     smallest_value = -1
-            except TypeError:
+            except TypeError: # if value shows up as nan
                 smallest_value = -1
 
             try:
                 largest_value = sorted(data_to_plot[k])[-1]
                 if largest_value == 0 or largest_value == 0.0:
                     largest_value = 1
-            except TypeError:
+            except TypeError: # if value shows up as nan
                 largest_value = 1
             ymin = smallest_value - (largest_value / 10)
             ymax = (largest_value / 10) + largest_value
-            plt.ylim(ymin, ymax)
+            
+            # this is to account for nan values in the middle of the data set
+            if True in np.isnan(y): 
+                values = []
+                for value in y:
+                    if value != np.nan:
+                        values.append(value)
+                ymin = min(values)
+                ymax = max(values)
+                ymin = ymin - (ymax / 10)
+                ymax = (ymax / 10) + ymax
+            
+            # really bad fix if here is no data to plot
+            if ymin == 0:
+                ymin = -1
+            
+            if ymax == 0:
+                ymax = 1
 
+            try:
+                plt.ylim(ymin, ymax)
+            except ValueError:
+                values = []
+                for value in y:
+                    if value != np.nan:
+                        values.append(value)
+                ymin = min(values)
+                ymax = max(values)
+                ymin = ymin - (ymax / 10)
+                ymax = (ymax / 10) + ymax
+                
             ax.xaxis.set_major_locator(MaxNLocator(5))
             ax.yaxis.set_major_locator(MaxNLocator(5))
             
@@ -247,6 +275,7 @@ def save_plot(files, figs):
             if user_input.upper() == "Y":
                 if not os.path.exists("./DataFiles/" + split_str + ".png"):
                     fig.savefig("./DataFiles/" + split_str + ".png")
+                    print("Saving " + split_str + ".png")
                     print("Done.")
 
                 else:
