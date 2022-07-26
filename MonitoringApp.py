@@ -51,6 +51,7 @@ blue.start(50)
 
 pot = MCP3008(0)
 
+# threading events to monitor mode states
 MODE_MS = threading.Event()
 MODE_RDM = threading.Event()
 MODE_ORD = threading.Event()
@@ -119,6 +120,7 @@ def button_long_press():
             MODE_ORD.set()
             time.sleep(0.1)
             
+            # give 2 seconds for user to lift from button
             wait_thread = threading.Thread(target=wait_user, daemon=True)
             wait_thread.start()
             
@@ -227,7 +229,7 @@ def set_led():
             
     # Record Data and Monitor
     if MODE_RDM.is_set():
-        if not RECORDING_STARTED:
+        if not RECORDING_STARTED: # prevent recording from starting again if it's already active
             record_thread = threading.Thread(target=record_data)
             record_thread.start()
         while MODE_RDM.is_set():
@@ -235,7 +237,7 @@ def set_led():
             
     # Only Record Data
     if MODE_ORD.is_set():
-        if not RECORDING_STARTED:
+        if not RECORDING_STARTED: # prevent recording from starting again if it's already active
             record_thread = threading.Thread(target=record_data)
             record_thread.start()
         while MODE_ORD.is_set():
@@ -249,6 +251,7 @@ def set_led():
     #logging.debug("closing " + str(threading.current_thread().getName()))
 
 def ultrasonic():
+    # ultrasonice handler
     #logging.debug("starting ultrasonice sensor")
     global ELECTRONICS_ON
     global distance
@@ -262,8 +265,9 @@ def ultrasonic():
     buzzer = gpio.PWM(GPIO_BUZZER, 0.1) # default buzzer to not play anything
     buzzer.start(10)
     
-    while ELECTRONICS_ON:
-        if not MODE_ORD.is_set():
+    while ELECTRONICS_ON: # keep ultrasonic sensor on for entire life of program
+        # if the buzzer is turned off, turn it back on
+        if not MODE_ORD.is_set(): 
             if buzzer_stopped:
                 buzzer.start(10)
                 buzzer_stopped = False
@@ -301,7 +305,7 @@ def ultrasonic():
                     stop_thread.start()
                 frequency = 0
 
-        else:
+        else: # turn off buzzer if ORD is active
             buzzer.stop()
             buzzer_stopped = True
             frequency = None
@@ -309,6 +313,7 @@ def ultrasonic():
     return
 
 def get_distance():
+    # function to receive distance in cm
     new_reading = False
     counter = 0
     
@@ -349,7 +354,7 @@ def beep():
     
     buzzer = gpio.PWM(GPIO_BUZZER, 2000)
     
-    while distance < 4:
+    while distance < 4: # keep the buzzer beeping while the distance is < 4 scm
         buzzer.start(10)
         time.sleep(1)
         buzzer.stop()
@@ -375,13 +380,14 @@ def stop_buzzer():
     stop_active = False
 
 def potentiometer():
+    # potentiometer handler
     global ELECTRONICS_ON
     global pot_final
     global rgb_red
     global rgb_green
     global rgb_blue
     
-    while ELECTRONICS_ON:
+    while ELECTRONICS_ON: # keep potentiometer sensor on for entire life of program
         # get potentiometer value as a percentage
         pot_val_perc = (1 - pot.value) * 100
         pot_final = round(pot_val_perc, 2)
@@ -426,6 +432,7 @@ def RGB_LED(R, G, B):
     blue.ChangeDutyCycle(B)
 
 def store_data():
+    # separate thread to handle data storage for timing reasons
     global distance
     global frequency
     global pot_final
@@ -441,6 +448,7 @@ def store_data():
     return
 
 def record_data():
+    # separate thread to record data to csv file for timing reasons
     global distance
     global frequency
     global pot_final
@@ -463,6 +471,7 @@ def record_data():
             n += 1
             file_path = "/home/pi/Documents/data{}.csv".format(n)
     
+    # start file with headers
     headers = ["Timestamp", "Distance (cm)", "Frequency (Hz)", "Potentiometer %", "RGB Value"]
     file = open(file_path, 'w', newline='')
     writer = csv.writer(file, delimiter=',', quotechar='"')
@@ -472,7 +481,7 @@ def record_data():
     
     temp_data = []
     while MODE_RDM.is_set() or MODE_ORD.is_set():
-        time.sleep(0.1) # fastest sampling rate
+        time.sleep(0.1) # fastest sampling rate of all electronics
         
         # if distance changes (most frequently changed variable), add row to data file
         timestamp = datetime.utcnow().strftime('%m-%d-%Y %H:%M:%S.%f')[:-3]
@@ -480,6 +489,7 @@ def record_data():
         values = [timestamp, str(distance), str(frequency), str(pot_final), rgb_value]
         temp_data.append(values) 
           
+    # append new data to csv and close file
     file = open(file_path, 'a', newline='')
     writer = csv.writer(file, delimiter=',', quotechar='"')
     writer.writerows(temp_data)
@@ -492,6 +502,7 @@ def record_data():
     print("Stopped recording...")
 
 def print_data():
+    # print data on console for user every 1 second
     global ELECTRONICS_ON
     global distance
     global frequency
@@ -538,14 +549,17 @@ if __name__ == '__main__':
         # close program gracefully            
         ELECTRONICS_ON = False
                 
+        # closes LED
         MODE_MS.clear()
         MODE_RDM.clear()
         MODE_ORD.clear()
         
+        # closes RGB LED
         red.stop()
         green.stop()
         blue.stop()
         
+        # wait for all threads to finish
         print_thread.join()
         led_thread.join()
         ultrasonic_thread.join()
@@ -553,6 +567,7 @@ if __name__ == '__main__':
         
         print("Stopping MonitoringApp.py")
         
+        # gracefully close electronics
         pot.close()
         gpio.cleanup()
         sys.exit()
